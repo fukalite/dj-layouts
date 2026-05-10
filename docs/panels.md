@@ -204,3 +204,76 @@ Panels always receive a **cloned** version of the original request:
 Panel views do **not** go through middleware again. Auth and session data are available (from the original request), but middleware side effects (e.g. security headers, cookie updates) do not fire.
 
 See [Security](security.md) for implications of this.
+
+---
+
+## Panel caching
+
+Panels can be cached so the view is only called on the first request. On subsequent requests the cached HTML is served directly, and any render queue items (scripts, styles) that the panel would have enqueued are **replayed from cache** — so the page's scripts and styles remain correct even when the panel itself is not re-rendered.
+
+### Quick setup
+
+```python
+from dj_layouts import Layout
+from dj_layouts import cache
+
+class DefaultLayout(Layout):
+    template = "myapp/layout.html"
+    nav = Panel("myapp:nav", cache=cache.sitewide(timeout=3600))
+```
+
+### Cache variation strategies
+
+| Function | Cache key varies by | Use case |
+|---|---|---|
+| `cache.sitewide(timeout=...)` | Nothing — one entry for all users and paths | Global nav, site footer |
+| `cache.per_user(timeout=...)` | User identity (`user.pk`, or `"anonymous"`) | User-specific sidebars |
+| `cache.per_path(timeout=...)` | Request path | Path-sensitive widgets |
+| `cache.per_user_per_path(timeout=...)` | User + path | User-specific per-page content |
+| `cache.per_session(timeout=...)` | Session key | Session-scoped panels |
+| `cache.custom(key_func=..., timeout=...)` | Return value of `key_func(request)` | Any other variation |
+
+All functions accept an optional `backend=` argument to specify which Django cache backend to use (default: `"default"`).
+
+### Anonymous users
+
+For `per_user` and `per_user_per_path`, anonymous users (those where `request.user.is_authenticated` is `False`, or where `request.user` doesn't exist) are all treated as the same identity using the string key `"anonymous"`.
+
+!!! warning "All anonymous users share one cache entry"
+    With `cache.per_user()`, every anonymous visitor to your site serves from the same cache entry. If your panel output varies by any request attribute beyond the user identity (e.g. a cookie, a session value, a query parameter), use `cache.custom()` with an appropriate `key_func` instead.
+
+### Render queues and caching
+
+When a panel is cached, its render queue contributions (scripts, styles, arbitrary queue items) are cached alongside the HTML. On a cache hit the queue items are **replayed** into the current request's queues, so `{% renderscripts %}` and `{% renderstyles %}` still output the expected tags.
+
+Deduplication still applies on replay — if two panels enqueue the same script, it only appears once in the output regardless of which panels were cached.
+
+```python
+class DefaultLayout(Layout):
+    template = "myapp/layout.html"
+    scripts = ScriptQueue()    # declared so panels can enqueue into it
+    nav = Panel("myapp:nav", cache=cache.sitewide(timeout=3600))
+    # nav calls add_script(request, "/js/nav.js") — this is cached and replayed on hit
+```
+
+### Global cache toggle
+
+Set `LAYOUTS_CACHE_ENABLED = False` in your Django settings to disable all panel caching globally. This is useful in development or testing:
+
+```python
+# settings/local.py
+LAYOUTS_CACHE_ENABLED = False
+```
+
+See [Settings](settings.md) for the full reference.
+
+### `stale_ttl` and `refresh_func`
+
+These arguments are accepted on all cache config functions for API stability, but are **not yet implemented**. They are no-ops in the current version:
+
+```python
+# Accepted but has no effect yet:
+cache.sitewide(timeout=3600, stale_ttl=7200, refresh_func=my_refresh)
+```
+
+Do not rely on stale-while-revalidate behaviour in the current release.

@@ -261,3 +261,13 @@ class DefaultLayout(Layout):
 ```
 
 The sidebar's stylesheet and script appear exactly once, even if another panel also enqueues the same files.
+
+---
+
+## Queues and panel caching
+
+When a panel is cached (via `Panel(..., cache=...)`) the render queue items it would have enqueued are **cached alongside the HTML** and replayed on cache hits. This means `{% renderscripts %}` and `{% renderstyles %}` produce correct output even when the panel view is not re-executed.
+
+Deduplication is applied on replay just as on a normal render — the same script or style will not appear twice in the output.
+
+See [Panels — Panel caching](panels.md#panel-caching) for the full caching reference.

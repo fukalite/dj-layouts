@@ -1,3 +1,4 @@
+from dj_layouts import cache
 from dj_layouts.base import Layout
 from dj_layouts.decorators import async_layout, layout, panel_only
 from dj_layouts.panels import Panel, async_resolve_panel_source, resolve_panel_source
@@ -24,6 +25,7 @@ __all__ = [
     "async_layout",
     "async_render_with_layout",
     "async_resolve_panel_source",
+    "cache",
     "layout",
     "panel_only",
     "render_with_layout",

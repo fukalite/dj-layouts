@@ -4,6 +4,14 @@
 >
 > **Before starting:** Discuss this phase with the user. Clarify cache key construction, how `cache.per_user` identifies the user (pk? username?), and whether cache misses should be logged. Do not write production code until you have a failing test.
 
+> **Agent implementation note (Phase 4 complete):**
+> - `dj_layouts/cache.py` — `CacheConfig` dataclass + `sitewide`, `per_user`, `per_path`, `per_user_per_path`, `per_session`, `custom` shortcut functions
+> - `dj_layouts/rendering.py` — cache check/write integrated into `_assemble_layout` (sync) and `_async_assemble_layout` (async); helpers `_cache_enabled`, `_snapshot_queues`, `_replay_queue_snapshot` added
+> - `dj_layouts/__init__.py` — `cache` module exported
+> - `tests/test_cache.py` — 22 tests: key construction, integration (hit/miss, disabled, per-user, async), queue replay and deduplication, cache write verification
+> - `docs/caching.md` — full reference page added; `docs/panels.md` and `docs/render-queues.md` updated
+> - Design decisions: anonymous users use `"anonymous"` key; cache misses logged at DEBUG; `LAYOUTS_CACHE_ENABLED=False` disables globally; HTML + queue snapshot cached together, items replayed (not re-rendered) on hit; `stale_ttl`/`refresh_func` no-ops
+
 ## Goal
 
 Individual panels can be cached using Django's cache framework. A panel whose output is cached is not re-rendered on subsequent requests — its stored HTML is used directly. Caching is opt-in, per-panel, configured in the `Panel()` declaration.

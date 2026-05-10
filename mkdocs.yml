@@ -50,6 +50,7 @@ nav:
     - Layouts: layouts.md
     - Panels: panels.md
     - Render Queues: render-queues.md
+    - Panel Caching: caching.md
     - Layout Context: layout-context.md
     - Decorators & Rendering: decorators.md
     - Request Attributes: request-attributes.md
