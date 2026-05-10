@@ -1,8 +1,21 @@
 # Settings
 
-dj-layouts settings are defined in your Django `settings.py`. All settings are optional; sensible defaults apply.
+dj-layouts is configured via a single `DJ_LAYOUTS` dict in your Django `settings.py`. All keys are optional; sensible defaults apply.
 
-## `LAYOUTS_DEBUG_ERRORS`
+```python
+# settings.py
+DJ_LAYOUTS = {
+    "DEBUG_ERRORS": None,
+    "CACHE_ENABLED": True,
+    "CACHE_BACKEND": "default",
+    "PARTIAL_DETECTORS": [],
+    "DETECTOR_RAISE_EXCEPTIONS": False,
+}
+```
+
+---
+
+## `DEBUG_ERRORS`
 
 **Type:** `bool | None`  
 **Default:** `None`
@@ -17,7 +30,7 @@ Controls whether panel rendering errors raise a `PanelRenderError` exception (sh
 
 ### Debug mode behaviour
 
-When `LAYOUTS_DEBUG_ERRORS` resolves to `True`:
+When `DEBUG_ERRORS` resolves to `True`:
 
 - `on_panel_error()` is **not called**
 - A `PanelRenderError` exception is raised immediately
@@ -27,7 +40,7 @@ This makes it easy to spot panel failures during development — you get the rea
 
 ### Production mode behaviour
 
-When `LAYOUTS_DEBUG_ERRORS` resolves to `False`:
+When `DEBUG_ERRORS` resolves to `False`:
 
 - The exception is **logged automatically** at `ERROR` level
 - `on_panel_error()` is called with a `PanelError` dataclass
@@ -39,30 +52,32 @@ When `LAYOUTS_DEBUG_ERRORS` resolves to `False`:
 ```python
 # settings.py
 
-# Default — follows DEBUG:
-# LAYOUTS_DEBUG_ERRORS is not set (or set to None)
+DJ_LAYOUTS = {
+    # Default — follows DEBUG (omit the key or set to None):
+    # "DEBUG_ERRORS": None,
 
-# Force debug behaviour in staging (DEBUG might be False):
-LAYOUTS_DEBUG_ERRORS = True
+    # Force debug behaviour in staging (DEBUG might be False):
+    "DEBUG_ERRORS": True,
 
-# Force production behaviour locally to test error handling:
-LAYOUTS_DEBUG_ERRORS = False
+    # Force production behaviour locally to test error handling:
+    "DEBUG_ERRORS": False,
+}
 ```
 
 ### Relationship with `DEBUG`
 
 ```
-LAYOUTS_DEBUG_ERRORS = None   and   DEBUG = True   →  debug mode  (raises PanelRenderError)
-LAYOUTS_DEBUG_ERRORS = None   and   DEBUG = False  →  production  (calls on_panel_error)
-LAYOUTS_DEBUG_ERRORS = True   (any DEBUG)          →  debug mode  (raises PanelRenderError)
-LAYOUTS_DEBUG_ERRORS = False  (any DEBUG)          →  production  (calls on_panel_error)
+DEBUG_ERRORS = None   and   DEBUG = True   →  debug mode  (raises PanelRenderError)
+DEBUG_ERRORS = None   and   DEBUG = False  →  production  (calls on_panel_error)
+DEBUG_ERRORS = True   (any DEBUG)          →  debug mode  (raises PanelRenderError)
+DEBUG_ERRORS = False  (any DEBUG)          →  production  (calls on_panel_error)
 ```
 
 See [Error Handling](error-handling.md) for details on `on_panel_error()`, `PanelError`, and `PanelRenderError`.
 
 ---
 
-## `LAYOUTS_CACHE_ENABLED`
+## `CACHE_ENABLED`
 
 **Type:** `bool`  
 **Default:** `True`
@@ -73,14 +88,16 @@ This is useful in development or testing where you want predictable, uncached be
 
 ```python
 # settings/local.py
-LAYOUTS_CACHE_ENABLED = False
+DJ_LAYOUTS = {
+    "CACHE_ENABLED": False,
+}
 ```
 
 Note that this setting does not affect Django's own cache framework — it only controls whether dj-layouts writes to or reads from the cache for panel results.
 
 ---
 
-## `LAYOUTS_CACHE_BACKEND`
+## `CACHE_BACKEND`
 
 **Type:** `str`  
 **Default:** `"default"`
@@ -93,7 +110,9 @@ CACHES = {
     "panels":  {"BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache", ...},
 }
 
-LAYOUTS_CACHE_BACKEND = "panels"
+DJ_LAYOUTS = {
+    "CACHE_BACKEND": "panels",
+}
 ```
 
 Individual panels can always override the backend per-panel:
@@ -104,7 +123,7 @@ Panel("myapp:nav", cache=cache.sitewide(timeout=3600, backend="panels"))
 
 ---
 
-## `LAYOUTS_PARTIAL_DETECTORS`
+## `PARTIAL_DETECTORS`
 
 **Type:** `list[str]`  
 **Default:** `[]`
@@ -112,10 +131,12 @@ Panel("myapp:nav", cache=cache.sitewide(timeout=3600, backend="panels"))
 A list of dotted import paths to partial detector callables. Each detector receives the current request and returns `True` if the request should skip layout assembly and return only the partial view response.
 
 ```python
-LAYOUTS_PARTIAL_DETECTORS = [
-    "dj_layouts.detection.htmx_detector",
-    "dj_layouts.detection.query_param_detector",
-]
+DJ_LAYOUTS = {
+    "PARTIAL_DETECTORS": [
+        "dj_layouts.detection.htmx_detector",
+        "dj_layouts.detection.query_param_detector",
+    ],
+}
 ```
 
 Built-in detectors:
@@ -129,7 +150,7 @@ See [Partial Detection](partial-detection.md) for the full reference.
 
 ---
 
-## `LAYOUTS_DETECTOR_RAISE_EXCEPTIONS`
+## `DETECTOR_RAISE_EXCEPTIONS`
 
 **Type:** `bool`  
 **Default:** `False`
@@ -140,15 +161,7 @@ When `True`, detector exceptions propagate as-is. Useful in development to catch
 
 ```python
 # settings/local.py
-LAYOUTS_DETECTOR_RAISE_EXCEPTIONS = True
+DJ_LAYOUTS = {
+    "DETECTOR_RAISE_EXCEPTIONS": True,
+}
 ```
-
----
-
-## Future settings
-
-The following settings are **not yet implemented** and are listed here as a reference for future versions:
-
-- `LAYOUTS_PARTIAL_DETECTORS` — list of partial detector classes (planned)
-
-Do not configure this setting in the current version — it has no effect.

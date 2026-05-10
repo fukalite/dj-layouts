@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
+
+from dj_layouts.settings import dj_layouts_settings
 
 
 logger = logging.getLogger(__name__)
@@ -36,14 +37,14 @@ def _get_detectors() -> list:
 
 
 def _load_detectors() -> list:
-    paths = getattr(settings, "LAYOUTS_PARTIAL_DETECTORS", [])
+    paths = dj_layouts_settings.PARTIAL_DETECTORS
     detectors = []
     for path in paths:
         try:
             detector = import_string(path)
         except ImportError as exc:
             raise ImproperlyConfigured(
-                f"LAYOUTS_PARTIAL_DETECTORS: could not import {path!r}. {exc}"
+                f'DJ_LAYOUTS["PARTIAL_DETECTORS"]: could not import {path!r}. {exc}'
             ) from exc
         detectors.append(detector)
     return detectors
@@ -59,12 +60,12 @@ def is_partial_request(request: Any) -> bool:
     """
     Return True if any configured detector identifies this as a partial request.
 
-    Detectors are loaded lazily from LAYOUTS_PARTIAL_DETECTORS on first call.
+    Detectors are loaded lazily from DJ_LAYOUTS["PARTIAL_DETECTORS"] on first call.
     If a detector raises an exception it is logged at WARNING level and treated
     as False (layout still assembled). Set LAYOUTS_DETECTOR_RAISE_EXCEPTIONS = True
     to re-raise instead.
     """
-    raise_on_error = bool(getattr(settings, "LAYOUTS_DETECTOR_RAISE_EXCEPTIONS", False))
+    raise_on_error = bool(dj_layouts_settings.DETECTOR_RAISE_EXCEPTIONS)
 
     for detector in _get_detectors():
         try:

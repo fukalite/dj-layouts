@@ -124,20 +124,20 @@ CACHES = {
 nav = Panel("myapp:nav", cache=cache.sitewide(timeout=3600, backend="redis"))
 ```
 
-You can also change the global default backend with the `LAYOUTS_CACHE_BACKEND` setting:
+You can also change the global default backend with `CACHE_BACKEND` in your `DJ_LAYOUTS` settings dict:
 
 ```python
 # settings.py
-LAYOUTS_CACHE_BACKEND = "redis"
+DJ_LAYOUTS = {"CACHE_BACKEND": "redis"}
 ```
 
 ## Disabling caching globally
 
-Set `LAYOUTS_CACHE_ENABLED = False` to disable all panel caching regardless of `cache=` arguments:
+Set `CACHE_ENABLED: False` in `DJ_LAYOUTS` to disable all panel caching regardless of `cache=` arguments:
 
 ```python
 # settings/local.py
-LAYOUTS_CACHE_ENABLED = False
+DJ_LAYOUTS = {"CACHE_ENABLED": False}
 ```
 
 This is useful in development and testing where you want deterministic, uncached rendering.

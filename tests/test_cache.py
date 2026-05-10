@@ -190,7 +190,7 @@ def test_panel_view_called_again_after_cache_miss(simple_layout, rf):
 
 
 def test_cache_disabled_globally_always_rerenders(simple_layout, rf, settings):
-    settings.LAYOUTS_CACHE_ENABLED = False
+    settings.DJ_LAYOUTS = {"CACHE_ENABLED": False}
     layout_cls, call_count = simple_layout
     render_with_layout(rf.get("/"), layout_cls, "content.html")
     render_with_layout(rf.get("/"), layout_cls, "content.html")
@@ -370,7 +370,7 @@ async def test_async_cached_panel_queue_items_replayed(locmem_templates, rf):
 
 @pytest.mark.asyncio
 async def test_async_cache_disabled_globally(locmem_templates, rf, settings):
-    settings.LAYOUTS_CACHE_ENABLED = False
+    settings.DJ_LAYOUTS = {"CACHE_ENABLED": False}
     locmem_templates(
         {
             "layouts/async_nodisable.html": (

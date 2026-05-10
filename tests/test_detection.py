@@ -79,26 +79,28 @@ def test_query_param_detector_false_on_wrong_value(rf):
 # ── is_partial_request ────────────────────────────────────────────────────────
 
 
-@override_settings(LAYOUTS_PARTIAL_DETECTORS=["dj_layouts.detection.never_detector"])
+@override_settings(DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.never_detector"]})
 def test_is_partial_request_false_with_never_detector(rf):
     assert is_partial_request(rf.get("/")) is False
 
 
-@override_settings(LAYOUTS_PARTIAL_DETECTORS=["dj_layouts.detection.htmx_detector"])
+@override_settings(DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]})
 def test_is_partial_request_true_with_htmx_detector(rf):
     assert is_partial_request(rf.get("/", HTTP_HX_REQUEST="true")) is True
 
 
-@override_settings(LAYOUTS_PARTIAL_DETECTORS=["dj_layouts.detection.htmx_detector"])
+@override_settings(DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]})
 def test_is_partial_request_false_with_htmx_detector_and_no_header(rf):
     assert is_partial_request(rf.get("/")) is False
 
 
 @override_settings(
-    LAYOUTS_PARTIAL_DETECTORS=[
-        "dj_layouts.detection.never_detector",
-        "dj_layouts.detection.htmx_detector",
-    ]
+    DJ_LAYOUTS={
+        "PARTIAL_DETECTORS": [
+            "dj_layouts.detection.never_detector",
+            "dj_layouts.detection.htmx_detector",
+        ]
+    }
 )
 def test_multiple_detectors_any_one_fires(rf):
     """Any detector returning True is sufficient."""
@@ -106,18 +108,20 @@ def test_multiple_detectors_any_one_fires(rf):
 
 
 @override_settings(
-    LAYOUTS_PARTIAL_DETECTORS=[
-        "dj_layouts.detection.never_detector",
-        "dj_layouts.detection.query_param_detector",
-    ]
+    DJ_LAYOUTS={
+        "PARTIAL_DETECTORS": [
+            "dj_layouts.detection.never_detector",
+            "dj_layouts.detection.query_param_detector",
+        ]
+    }
 )
 def test_multiple_detectors_none_fire(rf):
     assert is_partial_request(rf.get("/")) is False
 
 
-@override_settings(LAYOUTS_PARTIAL_DETECTORS=["not.a.real.module.detector"])
+@override_settings(DJ_LAYOUTS={"PARTIAL_DETECTORS": ["not.a.real.module.detector"]})
 def test_invalid_detector_path_raises_improperly_configured():
-    with pytest.raises(ImproperlyConfigured, match="LAYOUTS_PARTIAL_DETECTORS"):
+    with pytest.raises(ImproperlyConfigured, match="DJ_LAYOUTS"):
         is_partial_request(None)
 
 
@@ -129,8 +133,10 @@ def _raising_detector(request):
 
 
 @override_settings(
-    LAYOUTS_PARTIAL_DETECTORS=["tests.test_detection._raising_detector"],
-    LAYOUTS_DETECTOR_RAISE_EXCEPTIONS=False,
+    DJ_LAYOUTS={
+        "PARTIAL_DETECTORS": ["tests.test_detection._raising_detector"],
+        "DETECTOR_RAISE_EXCEPTIONS": False,
+    }
 )
 def test_detector_exception_treated_as_false_by_default(rf):
     """Exception in detector → log at WARNING, treat as False."""
@@ -139,11 +145,13 @@ def test_detector_exception_treated_as_false_by_default(rf):
 
 
 @override_settings(
-    LAYOUTS_PARTIAL_DETECTORS=["tests.test_detection._raising_detector"],
-    LAYOUTS_DETECTOR_RAISE_EXCEPTIONS=True,
+    DJ_LAYOUTS={
+        "PARTIAL_DETECTORS": ["tests.test_detection._raising_detector"],
+        "DETECTOR_RAISE_EXCEPTIONS": True,
+    }
 )
 def test_detector_exception_reraises_when_setting_true(rf):
-    """LAYOUTS_DETECTOR_RAISE_EXCEPTIONS = True → re-raise detector exceptions."""
+    """DETECTOR_RAISE_EXCEPTIONS = True → re-raise detector exceptions."""
     with pytest.raises(ValueError, match="boom"):
         is_partial_request(rf.get("/"))
 
@@ -151,7 +159,7 @@ def test_detector_exception_reraises_when_setting_true(rf):
 # ── Integration with @layout ──────────────────────────────────────────────────
 
 
-@override_settings(LAYOUTS_PARTIAL_DETECTORS=["dj_layouts.detection.htmx_detector"])
+@override_settings(DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]})
 def test_layout_decorator_partial_returns_view_response_directly(locmem_templates, rf):
     """HTMX request: view runs, response returned, no layout assembly."""
     locmem_templates(
@@ -176,7 +184,7 @@ def test_layout_decorator_partial_returns_view_response_directly(locmem_template
     assert request.is_layout_partial is True
 
 
-@override_settings(LAYOUTS_PARTIAL_DETECTORS=["dj_layouts.detection.htmx_detector"])
+@override_settings(DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]})
 def test_layout_decorator_non_partial_assembles_layout(locmem_templates, rf):
     """Non-HTMX request: layout assembled normally."""
     locmem_templates(
@@ -201,7 +209,7 @@ def test_layout_decorator_non_partial_assembles_layout(locmem_templates, rf):
     assert request.is_layout_partial is False
 
 
-@override_settings(LAYOUTS_PARTIAL_DETECTORS=["dj_layouts.detection.htmx_detector"])
+@override_settings(DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]})
 @pytest.mark.asyncio
 async def test_async_layout_decorator_partial_skips_layout(locmem_templates, rf):
     locmem_templates(
@@ -228,7 +236,7 @@ async def test_async_layout_decorator_partial_skips_layout(locmem_templates, rf)
 # ── render_with_layout bypasses detection ─────────────────────────────────────
 
 
-@override_settings(LAYOUTS_PARTIAL_DETECTORS=["dj_layouts.detection.htmx_detector"])
+@override_settings(DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]})
 def test_render_with_layout_ignores_detection(locmem_templates, rf):
     """render_with_layout always assembles the full layout, regardless of detectors."""
     locmem_templates(

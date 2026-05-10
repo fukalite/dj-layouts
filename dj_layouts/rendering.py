@@ -14,6 +14,7 @@ from dj_layouts.context import LayoutContext
 from dj_layouts.errors import PanelError, PanelRenderError
 from dj_layouts.panels import Panel, async_resolve_panel_source, resolve_panel_source
 from dj_layouts.request_utils import clone_request_as_get
+from dj_layouts.settings import dj_layouts_settings
 
 
 logger = logging.getLogger(__name__)
@@ -181,15 +182,15 @@ def _build_layout_context(
 
 def _debug_errors() -> bool:
     """Return True if panel errors should raise PanelRenderError."""
-    override = getattr(settings, "LAYOUTS_DEBUG_ERRORS", None)
+    override = dj_layouts_settings.DEBUG_ERRORS
     if override is None:
         return bool(settings.DEBUG)
     return bool(override)
 
 
 def _cache_enabled() -> bool:
-    """Return True unless LAYOUTS_CACHE_ENABLED is explicitly False."""
-    return bool(getattr(settings, "LAYOUTS_CACHE_ENABLED", True))
+    """Return True unless CACHE_ENABLED is explicitly False."""
+    return bool(dj_layouts_settings.CACHE_ENABLED)
 
 
 def _merge_panel_queues(request: Any, panel_request: Any) -> None:

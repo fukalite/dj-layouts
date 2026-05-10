@@ -135,7 +135,7 @@ def on_panel_error(self, request, error):
 
 The default implementation logs the error and renders `self.error_template`.
 
-In **debug mode** (`LAYOUTS_DEBUG_ERRORS = True` or `DEBUG = True`), this method is bypassed entirely — a `PanelRenderError` is raised so Django's debug error page appears. See [Error Handling](error-handling.md).
+In **debug mode** (`DJ_LAYOUTS["DEBUG_ERRORS"] = True` or `DEBUG = True`), this method is bypassed entirely — a `PanelRenderError` is raised so Django's debug error page appears. See [Error Handling](error-handling.md).
 
 **Parameters:**
 

@@ -258,11 +258,11 @@ class DefaultLayout(Layout):
 
 ### Global cache toggle
 
-Set `LAYOUTS_CACHE_ENABLED = False` in your Django settings to disable all panel caching globally. This is useful in development or testing:
+Set `CACHE_ENABLED: False` in your `DJ_LAYOUTS` settings dict to disable all panel caching globally. Useful in development or testing:
 
 ```python
 # settings/local.py
-LAYOUTS_CACHE_ENABLED = False
+DJ_LAYOUTS = {"CACHE_ENABLED": False}
 ```
 
 See [Settings](settings.md) for the full reference.

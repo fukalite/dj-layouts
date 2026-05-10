@@ -83,4 +83,4 @@ That's it. `homepage` renders the full page. The sidebar runs as a separate view
 | Common patterns | [Patterns](patterns.md) |
 | Security considerations | [Security](security.md) |
 | `request.layout_*` attributes | [Request Attributes](request-attributes.md) |
-| `LAYOUTS_*` settings | [Settings](settings.md) |
+| `DJ_LAYOUTS` settings dict | [Settings](settings.md) |

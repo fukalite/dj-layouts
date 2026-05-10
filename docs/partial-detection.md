@@ -10,14 +10,16 @@ Before the view runs, dj-layouts calls each configured **detector** in order. If
 
 ## Configuration
 
-Set `LAYOUTS_PARTIAL_DETECTORS` in your Django settings to a list of dotted import paths:
+Set `PARTIAL_DETECTORS` in your `DJ_LAYOUTS` settings dict to a list of dotted import paths:
 
 ```python
 # settings.py
-LAYOUTS_PARTIAL_DETECTORS = [
-    "dj_layouts.detection.htmx_detector",
-    "dj_layouts.detection.query_param_detector",
-]
+DJ_LAYOUTS = {
+    "PARTIAL_DETECTORS": [
+        "dj_layouts.detection.htmx_detector",
+        "dj_layouts.detection.query_param_detector",
+    ],
+}
 ```
 
 Detectors are loaded lazily on first request. An invalid dotted path raises `ImproperlyConfigured`.
@@ -35,7 +37,7 @@ Always returns `False`. Layout is always assembled. This is effectively the same
 Returns `True` when the request has the `HX-Request: true` header, which HTMX sets on every request it makes.
 
 ```python
-LAYOUTS_PARTIAL_DETECTORS = ["dj_layouts.detection.htmx_detector"]
+DJ_LAYOUTS = {"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]}
 ```
 
 With this configured, HTMX fetch requests receive only the partial HTML — perfect for fragment updates. Full page navigations (which lack the header) receive the complete layout.
@@ -45,7 +47,7 @@ With this configured, HTMX fetch requests receive only the partial HTML — perf
 Returns `True` when `?_partial=1` is in the query string. Useful for testing or JavaScript fetch calls where you control the URL.
 
 ```python
-LAYOUTS_PARTIAL_DETECTORS = ["dj_layouts.detection.query_param_detector"]
+DJ_LAYOUTS = {"PARTIAL_DETECTORS": ["dj_layouts.detection.query_param_detector"]}
 ```
 
 ## Custom detectors
@@ -65,7 +67,7 @@ def json_request_detector(request):
     return request.headers.get("Accept") == "application/json"
 
 # settings.py
-LAYOUTS_PARTIAL_DETECTORS = ["myapp.detectors.json_request_detector"]
+DJ_LAYOUTS = {"PARTIAL_DETECTORS": ["myapp.detectors.json_request_detector"]}
 ```
 
 ## Detector ordering
@@ -79,7 +81,7 @@ By default, if a detector raises an exception it is logged at `WARNING` level an
 To re-raise detector exceptions instead, set:
 
 ```python
-LAYOUTS_DETECTOR_RAISE_EXCEPTIONS = True
+DJ_LAYOUTS = {"DETECTOR_RAISE_EXCEPTIONS": True}
 ```
 
 This is useful in development if you want to catch broken detectors immediately.
@@ -167,7 +169,7 @@ If a `LayoutMixin` CBV is called as a panel (i.e. `request.layout_role == "panel
 
 | Setting | Default | Description |
 |---|---|---|
-| `LAYOUTS_PARTIAL_DETECTORS` | `[]` | List of dotted detector paths |
-| `LAYOUTS_DETECTOR_RAISE_EXCEPTIONS` | `False` | Re-raise detector exceptions instead of logging |
+| `DJ_LAYOUTS["PARTIAL_DETECTORS"]` | `[]` | List of dotted detector paths |
+| `DJ_LAYOUTS["DETECTOR_RAISE_EXCEPTIONS"]` | `False` | Re-raise detector exceptions instead of logging |
 
 See [Settings](settings.md) for the full settings reference.
