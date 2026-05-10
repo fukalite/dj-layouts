@@ -44,6 +44,17 @@ def clear_cache():
     caches["default"].clear()
 
 
+@pytest.fixture(autouse=True)
+def clear_deferred_layout_refs():
+    """Isolate each test from leftover string refs tracked by @layout/@async_layout."""
+    from dj_layouts.decorators import _deferred_layout_refs
+
+    snapshot = list(_deferred_layout_refs)
+    yield
+    _deferred_layout_refs.clear()
+    _deferred_layout_refs.extend(snapshot)
+
+
 @pytest.fixture()
 def locmem_templates(settings):
     """
@@ -212,3 +223,47 @@ def render_with_queues(locmem_templates):
         return html, request
 
     return _render
+
+
+# ── test_wagtail fixtures ──────────────────────────────────────────────────────
+
+
+@pytest.fixture()
+def wagtail_mixin():
+    """
+    Provide WagtailLayoutMixin with a minimal fake Wagtail Page.
+
+    Patches sys.modules with stub wagtail/wagtail.models modules so that
+    dj_layouts.wagtail can be imported without Wagtail installed.
+    Yields (WagtailLayoutMixin, FakePage).
+    """
+    import importlib
+    import sys
+    import types
+    from unittest.mock import patch
+
+    from django.http import HttpResponse
+
+    class FakePage:
+        template = "page.html"
+
+        def get_template(self, request, *args, **kwargs):
+            return self.template
+
+        def get_context(self, request, *args, **kwargs):
+            return {"page": self}
+
+        def serve(self, request, *args, **kwargs):
+            return HttpResponse("FAKE-PAGE")
+
+    fake_wagtail = types.ModuleType("wagtail")
+    fake_models = types.ModuleType("wagtail.models")
+    fake_models.Page = FakePage
+
+    sys.modules.pop("dj_layouts.wagtail", None)
+
+    with patch.dict(sys.modules, {"wagtail": fake_wagtail, "wagtail.models": fake_models}):
+        mod = importlib.import_module("dj_layouts.wagtail")
+        yield mod.WagtailLayoutMixin, FakePage
+
+    sys.modules.pop("dj_layouts.wagtail", None)

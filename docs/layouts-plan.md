@@ -1262,3 +1262,11 @@ A benchmark suite to quantify:
 - Impact of async vs sync panel rendering
 - Cache hit ratio impact on response times
 - Memory overhead of request cloning for panels
+
+### Wagtail end-to-end tests
+
+The `tests/test_wagtail.py` suite mocks Wagtail's `Page` class to keep the unit tests fast and dependency-free. A separate, optional e2e test suite should be added that installs a real Wagtail version, creates a minimal test project, and exercises `WagtailLayoutMixin` with actual Wagtail page rendering, preview mode, and the Wagtail admin. This is deferred to avoid coupling the main test suite to Wagtail version churn.
+
+### System checks for `LayoutMixin` subclasses
+
+System checks validate string refs found in `_registry` (auto-populated by `Layout.__init_subclass__`). `LayoutMixin` and `WagtailLayoutMixin` subclasses are not auto-registered, so their `layout_class` string attributes are not validated at startup — only at first request. This is a known limitation. Document the gap and catch misconfiguration with a clear `ImproperlyConfigured` at request time.

@@ -8,3 +8,6 @@ class DjLayoutsConfig(AppConfig):
 
     def ready(self) -> None:
         autodiscover_modules("layouts")
+        from dj_layouts import (
+            checks,  # noqa: F401 — registers system checks via @register()
+        )
