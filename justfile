@@ -40,20 +40,20 @@ e2e:
 # Check linting and formatting without making changes
 check:
     uv run ruff check .
-    uv run djlint src/dj_layouts/templates --check
+    uv run djlint dj_layouts/templates --check
 
 # Auto-fix all fixable lint and formatting issues (run by pre-commit hook)
 fix:
     uv run ruff check --fix .
     uv run ruff format .
-    uv run djlint src/dj_layouts/templates --reformat || true
+    uv run djlint dj_layouts/templates --reformat || true
 
 # Alias for fix
 fmt: fix
 
 # Run type checking
 typecheck:
-    uv run mypy src/dj_layouts/
+    uv run mypy dj_layouts/
 
 # Run unit tests with coverage report
 coverage:

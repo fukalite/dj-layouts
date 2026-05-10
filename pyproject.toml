@@ -63,11 +63,11 @@ source = "vcs"
 raw-options = { local_scheme = "no-local-version" }
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/dj_layouts"]
+packages = ["dj_layouts"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "src/dj_layouts/",
+  "dj_layouts/",
   "tests/",
   "example_project/",
   "docs/",
@@ -131,7 +131,7 @@ omit = [
 
 [tool.pytest.ini_options]
 python_files = ["test_*.py", "*_test.py", "tests.py"]
-pythonpath = ["src", "."]
+pythonpath = ["."]
 addopts = "--disable-warnings --ds=tests.settings"
 DJANGO_SETTINGS_MODULE = "tests.settings"
 asyncio_mode = "auto"
