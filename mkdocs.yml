@@ -44,3 +44,18 @@ plugins:
 
 nav:
   - Home: index.md
+  - Getting Started: getting-started.md
+  - Concepts: concepts.md
+  - Reference:
+    - Layouts: layouts.md
+    - Panels: panels.md
+    - Render Queues: render-queues.md
+    - Layout Context: layout-context.md
+    - Decorators & Rendering: decorators.md
+    - Request Attributes: request-attributes.md
+    - Settings: settings.md
+  - Guides:
+    - Async Rendering: async.md
+    - Error Handling: error-handling.md
+    - Common Patterns: patterns.md
+    - Security: security.md
