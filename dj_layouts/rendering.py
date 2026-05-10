@@ -35,6 +35,9 @@ def render_with_layout(
     layout_instance = layout_class()
     layout_ctx = _build_layout_context(layout_class, layout_instance, request)
 
+    # Attach fresh queues before rendering content so the main view can enqueue items
+    request.layout_queues = layout_class._create_queues()
+
     content_html = render_to_string(template_name, context or {}, request=request)
     return _assemble_layout(
         request, layout_class, content_html, panels=panels, _layout_ctx=layout_ctx
@@ -84,6 +87,7 @@ def _assemble_layout(
             rendered_panels[panel_name] = _handle_panel_error(
                 layout_instance, request, panel_name, panel.source, exc
             )
+        _merge_panel_queues(request, panel_request)
 
     return _render_layout_template(
         layout_instance, request, rendered_panels, layout_ctx
@@ -150,6 +154,15 @@ def _debug_errors() -> bool:
     return bool(override)
 
 
+def _merge_panel_queues(request: Any, panel_request: Any) -> None:
+    """Merge queue items from a panel request into the layout request, in insertion order."""
+    layout_queues: dict = getattr(request, "layout_queues", {})
+    panel_queues: dict = getattr(panel_request, "layout_queues", {})
+    for name, panel_queue in panel_queues.items():
+        if name in layout_queues:
+            layout_queues[name].merge_from(panel_queue)
+
+
 # ── Async assembly ────────────────────────────────────────────────────────────
 
 
@@ -173,6 +186,11 @@ async def async_render_with_layout(
 
     layout_instance = layout_class()
     layout_ctx = _build_layout_context(layout_class, layout_instance, request)
+
+    # Attach fresh queues before rendering content so the main view can enqueue items.
+    # Queue items from the content view will precede panel contributions — panels are
+    # merged in definition order after asyncio.gather completes.
+    request.layout_queues = layout_class._create_queues()
 
     content_html = render_to_string(template_name, context or {}, request=request)
     return await _async_assemble_layout(
@@ -209,17 +227,19 @@ async def _async_assemble_layout(
     non_none: list[tuple[str, Panel]] = [
         (name, panel) for name, panel in effective_panels.items() if panel is not None
     ]
+    # Create all panel requests upfront so we can merge their queues after gather.
+    panel_requests = [clone_request_as_get(request) for _ in non_none]
     tasks = [
         asyncio.create_task(
             async_resolve_panel_source(
-                clone_request_as_get(request),
+                panel_request,
                 panel.source,
                 _source_kind=panel._source_kind,
                 _join=panel.join,
                 **panel.context,
             )
         )
-        for _, panel in non_none
+        for (_, panel), panel_request in zip(non_none, panel_requests)
     ]
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -229,14 +249,17 @@ async def _async_assemble_layout(
     for panel_name, panel in effective_panels.items():
         if panel is None:
             rendered_panels[panel_name] = ""
-    # Merge gathered results in definition order
-    for (panel_name, panel), result in zip(non_none, results, strict=True):
+    # Merge gathered results and queues in definition order
+    for (panel_name, panel), result, panel_request in zip(
+        non_none, results, panel_requests, strict=True
+    ):
         if isinstance(result, Exception):
             rendered_panels[panel_name] = _handle_panel_error(
                 layout_instance, request, panel_name, panel.source, result
             )
         else:
             rendered_panels[panel_name] = result  # type: ignore[assignment]
+        _merge_panel_queues(request, panel_request)
 
     return _render_layout_template(
         layout_instance, request, rendered_panels, layout_ctx

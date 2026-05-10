@@ -58,6 +58,8 @@ def layout(
                 else layout_class
             )
             layout_ctx = _build_layout_context(resolved_cls, resolved_cls(), request)
+            # Attach queues before the view runs so it can call add_script / add_style
+            request.layout_queues = resolved_cls._create_queues()
 
             response = view_func(request, *args, **kwargs)
 
@@ -157,6 +159,8 @@ def async_layout(
                 else layout_class
             )
             layout_ctx = _build_layout_context(resolved_cls, resolved_cls(), request)
+            # Attach queues before the view runs so it can call add_script / add_style
+            request.layout_queues = resolved_cls._create_queues()
 
             response = await view_func(request, *args, **kwargs)
 

@@ -28,4 +28,10 @@ def clone_request_as_get(request: HttpRequest) -> HttpRequest:
     source_ctx = LayoutContext(getattr(request, "layout_context", LayoutContext()))
     cloned.__dict__["layout_context"] = FrozenLayoutContext(source_ctx)
 
+    # Give each panel a fresh, empty set of queues with the same structure
+    source_queues: dict = getattr(request, "layout_queues", {})
+    cloned.__dict__["layout_queues"] = {
+        name: q._new_instance() for name, q in source_queues.items()
+    }
+
     return cloned
