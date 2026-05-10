@@ -1,23 +1,9 @@
 import pytest
 from django.http import HttpResponse
-from django.test import RequestFactory
 
-from dj_layouts.base import Layout, _registry
+from dj_layouts.base import Layout
 from dj_layouts.panels import Panel
 from dj_layouts.rendering import render_with_layout
-
-
-@pytest.fixture(autouse=True)
-def clear_registry():
-    snapshot = dict(_registry)
-    yield
-    _registry.clear()
-    _registry.update(snapshot)
-
-
-@pytest.fixture()
-def rf():
-    return RequestFactory()
 
 
 # ── render_with_layout ────────────────────────────────────────────────────────

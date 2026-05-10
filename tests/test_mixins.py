@@ -5,36 +5,12 @@ from __future__ import annotations
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
-from django.test import RequestFactory, override_settings
+from django.test import override_settings
 from django.views.generic import TemplateView, View
 
-from dj_layouts.base import Layout, _registry
-from dj_layouts.detection import _reset_detector_cache
+from dj_layouts.base import Layout
 from dj_layouts.mixins import LayoutMixin
 from dj_layouts.panels import Panel
-
-
-# ── Fixtures ──────────────────────────────────────────────────────────────────
-
-
-@pytest.fixture()
-def rf():
-    return RequestFactory()
-
-
-@pytest.fixture(autouse=True)
-def clear_registry():
-    snapshot = dict(_registry)
-    yield
-    _registry.clear()
-    _registry.update(snapshot)
-
-
-@pytest.fixture(autouse=True)
-def reset_detectors():
-    _reset_detector_cache()
-    yield
-    _reset_detector_cache()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

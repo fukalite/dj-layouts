@@ -1,40 +1,4 @@
-import pytest
-from django.template import Context, RequestContext, Template
-from django.test import RequestFactory
-
-
-rf = RequestFactory()
-
-
-@pytest.fixture()
-def render_panel(locmem_templates):
-    """Helper: configure a layout template and render it with given panel context."""
-
-    def _render(template_str: str, panels: dict) -> str:
-        locmem_templates({"layouts/t.html": template_str})
-        t = Template(template_str)
-        return t.render(Context({"_panels": panels}))
-
-    return _render
-
-
-@pytest.fixture()
-def render_with_queues(locmem_templates):
-    """Helper: render a template string with a request that has layout queues."""
-    from dj_layouts.queues import ScriptQueue, StyleQueue
-
-    def _render(template_str: str, extra_queues: dict | None = None) -> tuple:
-        locmem_templates({"t.html": template_str})
-        request = rf.get("/")
-        queues = {"scripts": ScriptQueue(), "styles": StyleQueue()}
-        if extra_queues:
-            queues.update(extra_queues)
-        request.layout_queues = queues
-        t = Template(template_str)
-        html = t.render(RequestContext(request, {}))
-        return html, request
-
-    return _render
+from django.template import RequestContext, Template
 
 
 def test_panel_tag_renders_content_when_present(render_panel):
@@ -181,7 +145,6 @@ def test_renderscripts_outputs_script_tags(render_with_queues):
 
     _, request = render_with_queues("{% load layouts %}{% addscript '/js/a.js' %}")
     # Now render the output tag
-    from django.template import RequestContext, Template
 
     t = Template("{% load layouts %}{% renderscripts %}")
     html = t.render(RequestContext(request, {}))
@@ -198,7 +161,6 @@ def test_renderscripts_noop_when_empty(render_with_queues):
 
 def test_renderstyles_outputs_link_tags(render_with_queues):
     _, request = render_with_queues("{% load layouts %}{% addstyle '/css/a.css' %}")
-    from django.template import RequestContext, Template
 
     t = Template("{% load layouts %}{% renderstyles %}")
     html = t.render(RequestContext(request, {}))
@@ -225,7 +187,6 @@ def test_renderqueue_calls_queue_render(locmem_templates, rf):
     request.layout_queues = {"extras": RenderQueue(template="e.html")}
     request.layout_queues["extras"].add("<meta>")
 
-    from django.template import RequestContext, Template
 
     t = Template("{% load layouts %}{% renderqueue 'extras' %}")
     html = t.render(RequestContext(request, {}))

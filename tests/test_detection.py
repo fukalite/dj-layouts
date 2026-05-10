@@ -5,41 +5,17 @@ from __future__ import annotations
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
-from django.test import RequestFactory, override_settings
+from django.test import override_settings
 
-from dj_layouts.base import Layout, _registry
+from dj_layouts.base import Layout
 from dj_layouts.decorators import async_layout, layout
 from dj_layouts.detection import (
-    _reset_detector_cache,
     htmx_detector,
     is_partial_request,
     never_detector,
     query_param_detector,
 )
 from dj_layouts.rendering import render_with_layout
-
-
-# ── Fixtures ──────────────────────────────────────────────────────────────────
-
-
-@pytest.fixture()
-def rf():
-    return RequestFactory()
-
-
-@pytest.fixture(autouse=True)
-def clear_registry():
-    snapshot = dict(_registry)
-    yield
-    _registry.clear()
-    _registry.update(snapshot)
-
-
-@pytest.fixture(autouse=True)
-def reset_detectors():
-    _reset_detector_cache()
-    yield
-    _reset_detector_cache()
 
 
 # ── Built-in detectors ────────────────────────────────────────────────────────
