@@ -104,6 +104,47 @@ Panel("myapp:nav", cache=cache.sitewide(timeout=3600, backend="panels"))
 
 ---
 
+## `LAYOUTS_PARTIAL_DETECTORS`
+
+**Type:** `list[str]`  
+**Default:** `[]`
+
+A list of dotted import paths to partial detector callables. Each detector receives the current request and returns `True` if the request should skip layout assembly and return only the partial view response.
+
+```python
+LAYOUTS_PARTIAL_DETECTORS = [
+    "dj_layouts.detection.htmx_detector",
+    "dj_layouts.detection.query_param_detector",
+]
+```
+
+Built-in detectors:
+- `dj_layouts.detection.never_detector` — always `False` (layout always assembled)
+- `dj_layouts.detection.htmx_detector` — `True` when `HX-Request: true` header is present
+- `dj_layouts.detection.query_param_detector` — `True` when `?_partial=1` is in the query string
+
+Detectors are loaded lazily on first request. An invalid path raises `ImproperlyConfigured`.
+
+See [Partial Detection](partial-detection.md) for the full reference.
+
+---
+
+## `LAYOUTS_DETECTOR_RAISE_EXCEPTIONS`
+
+**Type:** `bool`  
+**Default:** `False`
+
+When `False` (default), exceptions raised inside a detector are logged at `WARNING` level and the detector is treated as returning `False`. Layout assembly proceeds normally.
+
+When `True`, detector exceptions propagate as-is. Useful in development to catch broken detectors immediately.
+
+```python
+# settings/local.py
+LAYOUTS_DETECTOR_RAISE_EXCEPTIONS = True
+```
+
+---
+
 ## Future settings
 
 The following settings are **not yet implemented** and are listed here as a reference for future versions:

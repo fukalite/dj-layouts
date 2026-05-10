@@ -143,6 +143,13 @@ The mixin should feel identical to `WagtailLayoutMixin` in naming and structure.
 
 The full Wagtail integration (`WagtailLayoutMixin`) — that's Phase 6. This phase only covers Django CBVs.
 
-## Note for next agent
+> **Agent implementation note (Phase 5 complete):**
+> - `dj_layouts/detection.py` — `never_detector`, `htmx_detector`, `query_param_detector`; lazy `_get_detectors()` loader; `is_partial_request()`; `LAYOUTS_DETECTOR_RAISE_EXCEPTIONS` setting; `_reset_detector_cache()` for tests
+> - `dj_layouts/mixins.py` — `LayoutMixin` with `async def dispatch` + `view_is_async = True`; handles sync and async handler methods; force-renders `TemplateResponse` in both partial and full paths; `LAYOUTS_PARTIAL_DETECTORS` detection wired in; `layout_class` accepts class or dotted string; `layout_panels` mirrors `@layout`'s `panels=`
+> - `dj_layouts/decorators.py` — detection wired into `@layout` (sync) and `@async_layout`; `is_partial_request()` called before the view runs; `request.is_layout_partial` set in both branches
+> - `dj_layouts/__init__.py` — `LayoutMixin` exported
+> - `tests/test_detection.py` — 19 tests: built-in detectors, `is_partial_request`, multiple detectors, invalid path, exception handling, `@layout`/`@async_layout` integration, `render_with_layout` bypass
+> - `tests/test_mixins.py` — 11 tests: basic assembly, dotted string, panel override, missing layout_class, async handlers, panel-role pass-through, TemplateResponse, non-200, partial detection (fires/doesn't), `view_is_async`
+> - `docs/partial-detection.md` — full reference page; `docs/settings.md` updated; `mkdocs.yml` nav updated
+> - Note for Phase 6 (Wagtail): `LayoutMixin` is the direct template for `WagtailLayoutMixin`. Both use `layout_class` (class or dotted string), `layout_panels`, and `async def dispatch`. Wagtail adds `get_layout_panels()` for context-aware panel selection and may need `wagtail_serve()` compatibility. The dotted-string resolution (`<app_label>.<ClassName>`) is handled by `Layout.resolve()` — Phase 6 can reuse this directly.
 
-After completing this phase, leave a brief note here describing anything discovered that affects Phase 6.

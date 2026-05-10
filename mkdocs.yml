@@ -51,6 +51,7 @@ nav:
     - Panels: panels.md
     - Render Queues: render-queues.md
     - Panel Caching: caching.md
+    - Partial Detection & LayoutMixin: partial-detection.md
     - Layout Context: layout-context.md
     - Decorators & Rendering: decorators.md
     - Request Attributes: request-attributes.md

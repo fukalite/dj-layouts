@@ -7,6 +7,7 @@ from typing import Any
 from django.http import HttpResponseForbidden, StreamingHttpResponse
 
 from dj_layouts.base import Layout
+from dj_layouts.detection import is_partial_request
 from dj_layouts.panels import Panel
 
 
@@ -46,7 +47,6 @@ def layout(
                 return view_func(request, *args, **kwargs)
 
             request.layout_role = "main"
-            request.is_layout_partial = False
 
             # Resolve layout class and build layout_context BEFORE calling the view
             # so the view and its templates can read request.layout_context.
@@ -61,6 +61,12 @@ def layout(
             # Attach queues before the view runs so it can call add_script / add_style
             request.layout_queues = resolved_cls._create_queues()
 
+            # Partial detection: if any detector fires, skip layout assembly.
+            if is_partial_request(request):
+                request.is_layout_partial = True
+                return view_func(request, *args, **kwargs)
+
+            request.is_layout_partial = False
             response = view_func(request, *args, **kwargs)
 
             # Pass through streaming responses and non-200 responses (redirects,
@@ -146,7 +152,6 @@ def async_layout(
                 return await view_func(request, *args, **kwargs)
 
             request.layout_role = "main"
-            request.is_layout_partial = False
 
             from dj_layouts.rendering import (
                 _async_assemble_layout,
@@ -162,6 +167,12 @@ def async_layout(
             # Attach queues before the view runs so it can call add_script / add_style
             request.layout_queues = resolved_cls._create_queues()
 
+            # Partial detection: if any detector fires, skip layout assembly.
+            if is_partial_request(request):
+                request.is_layout_partial = True
+                return await view_func(request, *args, **kwargs)
+
+            request.is_layout_partial = False
             response = await view_func(request, *args, **kwargs)
 
             if (
