@@ -1,0 +1,17 @@
+{% if error %}
+  <details style="background:#fee;
+                  border:1px solid #c00;
+                  padding:8px;
+                  margin:4px 0;
+                  font-family:monospace;
+                  font-size:12px">
+    <summary style="color:#c00;cursor:pointer">⚠ Panel error: {{ error.panel_name }}</summary>
+    <p>
+      <strong>Source:</strong> {{ error.source }}
+    </p>
+    <p>
+      <strong>Exception:</strong> {{ error.exception }}
+    </p>
+    <pre>{{ error.traceback_str }}</pre>
+  </details>
+{% endif %}

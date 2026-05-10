@@ -131,6 +131,7 @@ omit = [
 
 [tool.pytest.ini_options]
 python_files = ["test_*.py", "*_test.py", "tests.py"]
+pythonpath = ["src", "."]
 addopts = "--disable-warnings --ds=tests.settings"
 DJANGO_SETTINGS_MODULE = "tests.settings"
 asyncio_mode = "auto"
