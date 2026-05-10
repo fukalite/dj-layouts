@@ -1,0 +1,147 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dj-layouts"
+dynamic = ["version"]
+description = "A Django layout composition library — assemble pages from independent views, rendered concurrently"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.13"
+keywords = ["django", "layouts", "panels", "async", "htmx", "page composition"]
+maintainers = [
+  { name = "marcelkornblum" },
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Internet :: WWW/HTTP",
+  "Topic :: Software Development :: Libraries :: Application Frameworks",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Framework :: Django",
+  "Framework :: Django :: 5.2",
+  "Framework :: Django :: 6.0",
+  "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+  "django>=5.2,<8",
+]
+
+[project.urls]
+Homepage = "https://fukalite.github.io/dj-layouts/"
+Repository = "https://github.com/fukalite/dj-layouts"
+Documentation = "https://fukalite.github.io/dj-layouts/"
+"Bug Tracker" = "https://github.com/fukalite/dj-layouts/issues"
+Changelog = "https://github.com/fukalite/dj-layouts/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+testing = [
+  "coverage",
+  "factory-boy",
+  "playwright",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pytest-django",
+  "pytest-mock",
+  "pytest-playwright",
+]
+dev = [
+  "djlint",
+  "mypy",
+  "ruff",
+]
+docs = [
+  "mkdocs-material",
+  "mkdocstrings-python",
+]
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { local_scheme = "no-local-version" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dj_layouts"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/dj_layouts/",
+  "tests/",
+  "example_project/",
+  "docs/",
+  "README.md",
+  "CHANGELOG.md",
+  "CONTRIBUTING.md",
+  "LICENSE",
+]
+
+[tool.ruff]
+exclude = [
+    ".direnv",
+    ".git",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "build",
+    "dist",
+    "site-packages",
+]
+line-length = 88
+indent-width = 4
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+fixable = ["ALL"]
+ignore = ["B904", "E501", "N818", "S101", "S105"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+
+[tool.mypy]
+exclude = [
+    '/migrations/',
+    'example_project/',
+    'tests/',
+]
+check_untyped_defs = true
+ignore_missing_imports = false
+
+[[tool.mypy.overrides]]
+module = ["django.*", "asgiref.*"]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+branch = true
+source = ["dj_layouts"]
+omit = [
+    "dj_layouts/tests/*",
+    "dj_layouts/migrations/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+omit = [
+    "dj_layouts/tests/*",
+    "dj_layouts/migrations/*",
+]
+
+[tool.pytest.ini_options]
+python_files = ["test_*.py", "*_test.py", "tests.py"]
+addopts = "--disable-warnings --ds=tests.settings"
+DJANGO_SETTINGS_MODULE = "tests.settings"
+asyncio_mode = "auto"
+markers = [
+    "e2e: Mark the test as end-to-end (requires Playwright).",
+]
+
+[tool.djlint]
+extension = "html"
+profile = "django"
+ignore = "T002,H006,H017,H023"
+preserve_blank_lines = true
+extend_exclude = "htmlcov,staticfiles,static,node_modules"
+custom_blocks = "panel,endpanel"
