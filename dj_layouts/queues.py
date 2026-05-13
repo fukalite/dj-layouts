@@ -65,16 +65,17 @@ class ScriptQueue(BaseQueue):
         for item in self._items:
             if item.inline is not None:
                 parts.append(f"<script>{item.inline}</script>")
-            else:
-                attr_parts: list[str] = []
-                if item.is_async:
-                    attr_parts.append("async")
-                if item.is_deferred:
-                    attr_parts.append("defer")
-                if item.type:
-                    attr_parts.append(f'type="{item.type}"')
-                attrs = (" " + " ".join(attr_parts)) if attr_parts else ""
-                parts.append(f'<script{attrs} src="{item.src}"></script>')
+                continue
+
+            attr_parts: list[str] = []
+            if item.is_async:
+                attr_parts.append("async")
+            if item.is_deferred:
+                attr_parts.append("defer")
+            if item.type:
+                attr_parts.append(f'type="{item.type}"')
+            attrs = (" " + " ".join(attr_parts)) if attr_parts else ""
+            parts.append(f'<script{attrs} src="{item.src}"></script>')
         return "\n".join(parts)
 
 
@@ -89,9 +90,10 @@ class StyleQueue(BaseQueue):
         for item in self._items:
             if item.inline is not None:
                 parts.append(f"<style>{item.inline}</style>")
-            else:
-                media = f' media="{item.media}"' if item.media else ""
-                parts.append(f'<link rel="stylesheet" href="{item.href}"{media}>')
+                continue
+
+            media = f' media="{item.media}"' if item.media else ""
+            parts.append(f'<link rel="stylesheet" href="{item.href}"{media}>')
         return "\n".join(parts)
 
 
