@@ -1,6 +1,5 @@
-
 from dj_layouts.context import FrozenLayoutContext, LayoutContext
-from dj_layouts.request_utils import clone_request_as_get
+from dj_layouts.services.requests import clone_request_as_get
 
 
 def test_clone_forces_get_method(rf):

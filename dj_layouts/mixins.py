@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.core.exceptions import ImproperlyConfigured
 from django.http import StreamingHttpResponse
@@ -10,9 +10,22 @@ from django.utils.decorators import classonlymethod
 from dj_layouts.base import Layout
 from dj_layouts.detection import is_partial_request
 from dj_layouts.panels import Panel
+from dj_layouts.services.requests import (
+    attach_queues,
+    mark_request_as_main,
+    mark_request_as_partial,
+)
 
 
-class LayoutMixin:
+if TYPE_CHECKING:
+    from django.views import View as _ViewBase
+
+    _MixinBase: type = _ViewBase
+else:
+    _MixinBase: type = object
+
+
+class LayoutMixin(_MixinBase):
     """
     Mixin for Django class-based views that assembles the response inside a Layout.
 
@@ -70,12 +83,12 @@ class LayoutMixin:
 
         from dj_layouts.rendering import _async_assemble_layout, _build_layout_context
 
-        request.layout_role = "main"
+        mark_request_as_main(request)
         layout_ctx = _build_layout_context(resolved_cls, resolved_cls(), request)
-        request.layout_queues = resolved_cls._create_queues()
+        attach_queues(request, resolved_cls)
 
         if is_partial_request(request):
-            request.is_layout_partial = True
+            mark_request_as_partial(request, partial=True)
             response = super().dispatch(request, *args, **kwargs)
             if asyncio.iscoroutine(response):
                 response = await response
@@ -87,7 +100,7 @@ class LayoutMixin:
                     response.render()
             return response
 
-        request.is_layout_partial = False
+        mark_request_as_partial(request, partial=False)
 
         response = super().dispatch(request, *args, **kwargs)
         if asyncio.iscoroutine(response):

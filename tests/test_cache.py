@@ -118,7 +118,6 @@ def test_custom_backend_forwarded():
 # ── Integration: render_with_layout caching ───────────────────────────────────
 
 
-
 def test_cached_panel_served_from_cache_on_second_request(cache_test_layout, rf):
     layout_cls, call_count = cache_test_layout
     request1 = rf.get("/")
@@ -152,9 +151,7 @@ def test_cache_disabled_globally_always_rerenders(cache_test_layout, rf, setting
 def test_per_user_cache_different_entries_per_user(locmem_templates, rf):
     locmem_templates(
         {
-            "layouts/pu.html": (
-                "{% load layouts %}{% panel 'nav' %}{% endpanel %}"
-            ),
+            "layouts/pu.html": ("{% load layouts %}{% panel 'nav' %}{% endpanel %}"),
             "content.html": "",
         }
     )

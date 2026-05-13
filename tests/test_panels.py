@@ -116,8 +116,6 @@ def _ctx_view(request, **kwargs):
     return HttpResponse(f"<p>items={limit}</p>")
 
 
-
-
 def test_url_name_calls_view(rf, url_conf):
     import tests.test_panels as mod
 

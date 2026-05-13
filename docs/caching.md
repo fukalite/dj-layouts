@@ -35,7 +35,7 @@ account_nav = Panel("myapp:account_nav", cache=cache.per_user(timeout=900))
 ```
 
 !!! warning "All anonymous users share one cache entry"
-    With `cache.per_user()`, every unauthenticated visitor shares the same cached output. If anonymous panel output can vary by any request attribute (cookie, query parameter, session value), use `cache.custom()` with an explicit `key_func` instead.
+With `cache.per_user()`, every unauthenticated visitor shares the same cached output. If anonymous panel output can vary by any request attribute (cookie, query parameter, session value), use `cache.custom()` with an explicit `key_func` instead.
 
 ### `cache.per_path(timeout, *, backend="default")`
 
@@ -85,14 +85,14 @@ layouts:panel:{panel_name}:{vary}       # all other strategies
 
 For example:
 
-| Strategy | Panel name | Vary | Key |
-|---|---|---|---|
-| `sitewide` | `nav` | — | `layouts:panel:nav` |
-| `per_user` | `nav` | user pk `42` | `layouts:panel:nav:42` |
-| `per_user` | `nav` | anonymous | `layouts:panel:nav:anonymous` |
-| `per_path` | `nav` | `/about/` | `layouts:panel:nav:/about/` |
-| `per_session` | `cart` | `abc123` | `layouts:panel:cart:abc123` |
-| `custom` | `price` | `GBP` | `layouts:panel:price:GBP` |
+| Strategy      | Panel name | Vary         | Key                           |
+| ------------- | ---------- | ------------ | ----------------------------- |
+| `sitewide`    | `nav`      | —            | `layouts:panel:nav`           |
+| `per_user`    | `nav`      | user pk `42` | `layouts:panel:nav:42`        |
+| `per_user`    | `nav`      | anonymous    | `layouts:panel:nav:anonymous` |
+| `per_path`    | `nav`      | `/about/`    | `layouts:panel:nav:/about/`   |
+| `per_session` | `cart`     | `abc123`     | `layouts:panel:cart:abc123`   |
+| `custom`      | `price`    | `GBP`        | `layouts:panel:price:GBP`     |
 
 ## Render queues and caching
 

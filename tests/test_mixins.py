@@ -231,7 +231,9 @@ async def test_layout_mixin_passes_through_non_200(locmem_templates, rf):
 # ── Partial detection ─────────────────────────────────────────────────────────
 
 
-@override_settings(DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]})
+@override_settings(
+    DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]}
+)
 @pytest.mark.asyncio
 async def test_layout_mixin_partial_skips_layout(locmem_templates, rf):
     """HTMX request: view runs, partial response returned, no layout wrapping."""
@@ -257,7 +259,9 @@ async def test_layout_mixin_partial_skips_layout(locmem_templates, rf):
     assert request.is_layout_partial is True
 
 
-@override_settings(DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]})
+@override_settings(
+    DJ_LAYOUTS={"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]}
+)
 @pytest.mark.asyncio
 async def test_layout_mixin_non_partial_assembles_layout(locmem_templates, rf):
     locmem_templates(

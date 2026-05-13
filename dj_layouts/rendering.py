@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import Any, cast
 
 from django.conf import settings
 from django.core.cache import caches
@@ -13,7 +13,7 @@ from dj_layouts.base import Layout
 from dj_layouts.context import LayoutContext
 from dj_layouts.errors import PanelError, PanelRenderError
 from dj_layouts.panels import Panel, async_resolve_panel_source, resolve_panel_source
-from dj_layouts.request_utils import clone_request_as_get
+from dj_layouts.services.requests import attach_queues, clone_request_as_get
 from dj_layouts.settings import dj_layouts_settings
 
 
@@ -42,7 +42,7 @@ def render_with_layout(
     layout_ctx = _build_layout_context(layout_class, layout_instance, request)
 
     # Attach fresh queues before rendering content so the main view can enqueue items
-    request.layout_queues = layout_class._create_queues()
+    attach_queues(request, layout_class)
 
     content_html = render_to_string(template_name, context or {}, request=request)
     return _assemble_layout(
@@ -214,9 +214,10 @@ def _replay_queue_snapshot(request: Any, snapshot: dict[str, list]) -> None:
     """Replay cached queue items into the main request's queues."""
     layout_queues: dict = getattr(request, "layout_queues", {})
     for name, items in snapshot.items():
-        if name in layout_queues:
-            for item in items:
-                layout_queues[name].add(item)
+        if name not in layout_queues:
+            continue
+        for item in items:
+            layout_queues[name].add(item)
 
 
 # ── Async assembly ────────────────────────────────────────────────────────────
@@ -246,7 +247,7 @@ async def async_render_with_layout(
     # Attach fresh queues before rendering content so the main view can enqueue items.
     # Queue items from the content view will precede panel contributions — panels are
     # merged in definition order after asyncio.gather completes.
-    request.layout_queues = layout_class._create_queues()
+    attach_queues(request, layout_class)
 
     content_html = render_to_string(template_name, context or {}, request=request)
     return await _async_assemble_layout(
@@ -285,14 +286,19 @@ async def _async_assemble_layout(
     # ── Cache check (sequential, in definition order) ─────────────────────────
     # Panels with a cache hit are stored here; misses (and uncached) go to tasks.
     non_none: list[tuple[str, Panel]] = [
-        (name, panel) for name, panel in effective_panels.items() if panel is not None
+        (name, cast(Panel, panel))
+        for name, panel in effective_panels.items()
+        if panel is not None
     ]
 
     cache_hits: dict[str, tuple[str, dict]] = {}  # panel_name -> (html, queue_snapshot)
-    needs_render: list[tuple[str, Panel, str | None]] = []  # (name, panel, cache_key|None)
+    needs_render: list[
+        tuple[str, Panel, str | None]
+    ] = []  # (name, panel, cache_key|None)
 
     for panel_name, panel in non_none:
         cache_cfg = panel.cache
+        cache_key = None
         if cache_cfg is not None and _cache_enabled():
             cache_key = cache_cfg.make_key(panel_name, request)
             backend = caches[cache_cfg.backend]
@@ -302,9 +308,7 @@ async def _async_assemble_layout(
                 cache_hits[panel_name] = cached
                 continue
             logger.debug("Panel cache miss: %r (key=%s)", panel_name, cache_key)
-            needs_render.append((panel_name, panel, cache_key))
-        else:
-            needs_render.append((panel_name, panel, None))
+        needs_render.append((panel_name, panel, cache_key))
 
     # ── Concurrent rendering for cache misses ─────────────────────────────────
     panel_requests = [clone_request_as_get(request) for _ in needs_render]
@@ -324,8 +328,8 @@ async def _async_assemble_layout(
 
     # ── Assemble in definition order ──────────────────────────────────────────
     rendered_panels: dict[str, str] = {"content": content_html}
-    for panel_name, panel in effective_panels.items():
-        if panel is None:
+    for panel_name, panel_or_none in effective_panels.items():
+        if panel_or_none is None:
             rendered_panels[panel_name] = ""
 
     render_idx = 0
@@ -356,7 +360,9 @@ async def _async_assemble_layout(
             queue_snapshot = _snapshot_queues(panel_request)
             cache_cfg = panel.cache  # type: ignore[union-attr]
             backend = caches[cache_cfg.backend]
-            await backend.aset(cache_key, (html, queue_snapshot), timeout=cache_cfg.timeout)
+            await backend.aset(
+                cache_key, (html, queue_snapshot), timeout=cache_cfg.timeout
+            )
 
         _merge_panel_queues(request, panel_request)
 

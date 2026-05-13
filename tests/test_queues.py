@@ -243,7 +243,9 @@ def test_layout_queue_configs_are_inherited():
 # ── Integration: render_with_layout queue flow ────────────────────────────────
 
 
-def test_add_script_in_view_appears_in_output(simple_queue_layout, rf, locmem_templates):
+def test_add_script_in_view_appears_in_output(
+    simple_queue_layout, rf, locmem_templates
+):
     """add_script called before render_with_layout (via decorator) appears in output."""
     from dj_layouts.decorators import layout
 
@@ -366,8 +368,7 @@ def test_inline_script_block_tag(locmem_templates, rf):
         {
             "layouts/inline.html": "{% load layouts %}{% renderscripts %}",
             "content_with_script.html": (
-                "{% load layouts %}"
-                "{% addscript %}console.log(1);{% endaddscript %}"
+                "{% load layouts %}{% addscript %}console.log(1);{% endaddscript %}"
             ),
         }
     )
@@ -385,7 +386,9 @@ def test_inline_script_block_tag(locmem_templates, rf):
 
 
 @pytest.mark.asyncio
-async def test_async_panel_queue_ordering_follows_definition_order(locmem_templates, rf):
+async def test_async_panel_queue_ordering_follows_definition_order(
+    locmem_templates, rf
+):
     """
     Even when panels execute concurrently, queue items from Panel A (defined first)
     precede Panel B's items in the rendered output.
@@ -414,7 +417,9 @@ async def test_async_panel_queue_ordering_follows_definition_order(locmem_templa
         panel_fast = Panel(panel_fast_fn)
 
     request = rf.get("/")
-    response = await async_render_with_layout(request, AsyncOrderLayout, "content_empty.html")
+    response = await async_render_with_layout(
+        request, AsyncOrderLayout, "content_empty.html"
+    )
     html = response.content.decode()
     pos_slow = html.index("/js/slow.js")
     pos_fast = html.index("/js/fast.js")
