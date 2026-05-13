@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.core.exceptions import ImproperlyConfigured
 from django.http import StreamingHttpResponse
@@ -17,7 +17,15 @@ from dj_layouts.services.requests import (
 )
 
 
-class LayoutMixin:
+if TYPE_CHECKING:
+    from django.views import View as _ViewBase
+
+    _MixinBase: type = _ViewBase
+else:
+    _MixinBase: type = object
+
+
+class LayoutMixin(_MixinBase):
     """
     Mixin for Django class-based views that assembles the response inside a Layout.
 
