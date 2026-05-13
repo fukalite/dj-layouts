@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
+from dj_layouts.queues import BaseQueue
+
 
 if TYPE_CHECKING:
     from dj_layouts.errors import PanelError
@@ -22,6 +24,7 @@ class Layout:
     error_template: str = "layouts/error.html"
     layout_context_defaults: dict[str, Any] = {}
     _panels: dict[str, Any]
+    _queue_configs: dict[str, BaseQueue]
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -44,10 +47,27 @@ class Layout:
                 collected.setdefault(attr, val)
         cls._panels = collected
 
+        # Collect BaseQueue configs defined directly on this class
+        collected_queues: dict[str, BaseQueue] = {
+            attr: val for attr, val in vars(cls).items() if isinstance(val, BaseQueue)
+        }
+        # Inherit queue configs from Layout parent classes (direct definition wins)
+        for base in cls.__mro__[1:]:
+            if base is Layout or not issubclass(base, Layout):
+                continue
+            for attr, val in getattr(base, "_queue_configs", {}).items():
+                collected_queues.setdefault(attr, val)
+        cls._queue_configs = collected_queues
+
         # Register by "<app_label>.<ClassName>"
         app_label = cls.__module__.split(".")[0]
         key = f"{app_label}.{cls.__name__}"
         _registry[key] = cls
+
+    @classmethod
+    def _create_queues(cls) -> dict[str, BaseQueue]:
+        """Create fresh queue instances for a single request."""
+        return {name: cfg._new_instance() for name, cfg in cls._queue_configs.items()}
 
     @classmethod
     def resolve(cls, dotted: str) -> type[Layout]:

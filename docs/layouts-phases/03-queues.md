@@ -135,4 +135,14 @@ Caching, partial detection, `LayoutMixin`, Wagtail. Queue priority buckets (prep
 
 ## Note for next agent
 
-After completing this phase, leave a brief note here describing anything discovered that affects Phases 4–6.
+Phase 3 is complete. Implementation notes for Phases 4–6:
+
+- **Queue ordering — content before panels**: The main view's queue contributions (via `add_script` / template tags in the content template) always precede panel contributions, because `layout_queues` is attached to the request before the content template renders, and panels are merged after `asyncio.gather`. **This should be documented in `docs/` before Phase 4.** Users who need a panel's scripts to precede the content's scripts cannot currently achieve this — queue priority buckets (prepend/append) were deliberately deferred.
+
+- **`@layout` decorator sets up queues**: `request.layout_queues` is attached in the `@layout` / `@async_layout` wrappers (before the view function runs), and also at the start of `render_with_layout` / `async_render_with_layout`. Both paths converge on `_assemble_layout` / `_async_assemble_layout`, which do **not** recreate queues — they rely on queues already being present on the request.
+
+- **`RenderQueue` templates must use `{{ item|safe }}`**: Items are raw strings (HTML fragments). Django's auto-escaping will escape them unless the user's template marks them safe. This is the correct Django pattern and should be noted in the public docs.
+
+- **Queue names are user-defined**: `ScriptQueue` / `StyleQueue` / `RenderQueue` instances are class attributes on the Layout subclass. The conventional names are `scripts` and `styles` (matching `{% renderscripts %}` / `{% renderstyles %}`). `{% renderqueue "name" %}` works for any queue name. There is no global registry of queue types — discovery happens via `__init_subclass__`.
+
+- **Other work to do (carry to Phases 4–6)**: Queue priority buckets (prepend vs append), per-queue dedup key customisation, and the ability to control where the content view's queue contributions fall relative to panel contributions are all deferred. Flag these as future work in the public docs.

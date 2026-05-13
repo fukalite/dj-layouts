@@ -1,6 +1,8 @@
 from django.urls import path
 
+from . import views
+
 
 urlpatterns = [
-    path("", lambda request: __import__("django.http", fromlist=["HttpResponse"]).HttpResponse("dj-layouts example")),
+    path("", views.index),
 ]
