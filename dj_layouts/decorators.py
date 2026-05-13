@@ -9,6 +9,11 @@ from django.http import HttpResponseForbidden, StreamingHttpResponse
 from dj_layouts.base import Layout
 from dj_layouts.detection import is_partial_request
 from dj_layouts.panels import Panel
+from dj_layouts.services.requests import (
+    attach_queues,
+    mark_request_as_main,
+    mark_request_as_partial,
+)
 
 
 _PANEL_ONLY_MARKER = "_is_panel_only"
@@ -46,7 +51,7 @@ def layout(
             if getattr(request, "layout_role", None) == "panel":
                 return view_func(request, *args, **kwargs)
 
-            request.layout_role = "main"
+            mark_request_as_main(request)
 
             # Resolve layout class and build layout_context BEFORE calling the view
             # so the view and its templates can read request.layout_context.
@@ -59,14 +64,14 @@ def layout(
             )
             layout_ctx = _build_layout_context(resolved_cls, resolved_cls(), request)
             # Attach queues before the view runs so it can call add_script / add_style
-            request.layout_queues = resolved_cls._create_queues()
+            attach_queues(request, resolved_cls)
 
             # Partial detection: if any detector fires, skip layout assembly.
             if is_partial_request(request):
-                request.is_layout_partial = True
+                mark_request_as_partial(request, partial=True)
                 return view_func(request, *args, **kwargs)
 
-            request.is_layout_partial = False
+            mark_request_as_partial(request, partial=False)
             response = view_func(request, *args, **kwargs)
 
             # Pass through streaming responses and non-200 responses (redirects,
@@ -151,7 +156,7 @@ def async_layout(
             if getattr(request, "layout_role", None) == "panel":
                 return await view_func(request, *args, **kwargs)
 
-            request.layout_role = "main"
+            mark_request_as_main(request)
 
             from dj_layouts.rendering import (
                 _async_assemble_layout,
@@ -165,14 +170,14 @@ def async_layout(
             )
             layout_ctx = _build_layout_context(resolved_cls, resolved_cls(), request)
             # Attach queues before the view runs so it can call add_script / add_style
-            request.layout_queues = resolved_cls._create_queues()
+            attach_queues(request, resolved_cls)
 
             # Partial detection: if any detector fires, skip layout assembly.
             if is_partial_request(request):
-                request.is_layout_partial = True
+                mark_request_as_partial(request, partial=True)
                 return await view_func(request, *args, **kwargs)
 
-            request.is_layout_partial = False
+            mark_request_as_partial(request, partial=False)
             response = await view_func(request, *args, **kwargs)
 
             if (

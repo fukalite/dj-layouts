@@ -10,7 +10,7 @@ from django.http import HttpRequest
 logger = logging.getLogger(__name__)
 
 
-def _default_backend() -> str:
+def get_default_backend() -> str:
     from dj_layouts.settings import dj_layouts_settings
 
     return dj_layouts_settings.CACHE_BACKEND
@@ -109,7 +109,9 @@ def sitewide(timeout: int, *, backend: str | None = None) -> CacheConfig:
         panel contains user-specific content, use :func:`per_user` instead.
     """
     return CacheConfig(
-        key_func=_sitewide_key, timeout=timeout, backend=backend or _default_backend()
+        key_func=_sitewide_key,
+        timeout=timeout,
+        backend=backend or get_default_backend(),
     )
 
 
@@ -122,7 +124,7 @@ def per_user(timeout: int, *, backend: str | None = None) -> CacheConfig:
     may render different content for different anonymous sessions.
     """
     return CacheConfig(
-        key_func=_get_user_id, timeout=timeout, backend=backend or _default_backend()
+        key_func=_get_user_id, timeout=timeout, backend=backend or get_default_backend()
     )
 
 
@@ -134,7 +136,7 @@ def per_path(timeout: int, *, backend: str | None = None) -> CacheConfig:
     breadcrumb trail or page-specific sidebar.
     """
     return CacheConfig(
-        key_func=_path_key, timeout=timeout, backend=backend or _default_backend()
+        key_func=_path_key, timeout=timeout, backend=backend or get_default_backend()
     )
 
 
@@ -143,7 +145,7 @@ def per_user_per_path(timeout: int, *, backend: str | None = None) -> CacheConfi
     return CacheConfig(
         key_func=_user_per_path_key,
         timeout=timeout,
-        backend=backend or _default_backend(),
+        backend=backend or get_default_backend(),
     )
 
 
@@ -156,7 +158,7 @@ def per_session(timeout: int, *, backend: str | None = None) -> CacheConfig:
     has not yet been created.
     """
     return CacheConfig(
-        key_func=_session_key, timeout=timeout, backend=backend or _default_backend()
+        key_func=_session_key, timeout=timeout, backend=backend or get_default_backend()
     )
 
 
@@ -178,7 +180,7 @@ def custom(
     return CacheConfig(
         key_func=key_func,
         timeout=timeout,
-        backend=backend or _default_backend(),
+        backend=backend or get_default_backend(),
         stale_ttl=stale_ttl,
         refresh_func=refresh_func,
     )

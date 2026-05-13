@@ -17,16 +17,16 @@ DJ_LAYOUTS = {
 
 ## `DEBUG_ERRORS`
 
-**Type:** `bool | None`  
+**Type:** `bool | None`
 **Default:** `None`
 
 Controls whether panel rendering errors raise a `PanelRenderError` exception (showing Django's debug error page) or are handled gracefully by `on_panel_error()`.
 
-| Value | Behaviour |
-|---|---|
-| `None` (default) | Follows Django's `DEBUG` setting |
-| `True` | Always raise `PanelRenderError` (debug mode, regardless of `DEBUG`) |
-| `False` | Always call `on_panel_error()` (production mode, even when `DEBUG = True`) |
+| Value            | Behaviour                                                                  |
+| ---------------- | -------------------------------------------------------------------------- |
+| `None` (default) | Follows Django's `DEBUG` setting                                           |
+| `True`           | Always raise `PanelRenderError` (debug mode, regardless of `DEBUG`)        |
+| `False`          | Always call `on_panel_error()` (production mode, even when `DEBUG = True`) |
 
 ### Debug mode behaviour
 
@@ -79,7 +79,7 @@ See [Error Handling](error-handling.md) for details on `on_panel_error()`, `Pane
 
 ## `CACHE_ENABLED`
 
-**Type:** `bool`  
+**Type:** `bool`
 **Default:** `True`
 
 When set to `False`, all panel caching is disabled globally — panels always re-render even when a `cache=` argument is provided in their `Panel(...)` definition.
@@ -99,7 +99,7 @@ Note that this setting does not affect Django's own cache framework — it only 
 
 ## `CACHE_BACKEND`
 
-**Type:** `str`  
+**Type:** `str`
 **Default:** `"default"`
 
 The name of the Django cache backend used as the default for panel caching when no `backend=` is specified on the `CacheConfig`. Must be a key in `settings.CACHES`.
@@ -125,7 +125,7 @@ Panel("myapp:nav", cache=cache.sitewide(timeout=3600, backend="panels"))
 
 ## `PARTIAL_DETECTORS`
 
-**Type:** `list[str]`  
+**Type:** `list[str]`
 **Default:** `[]`
 
 A list of dotted import paths to partial detector callables. Each detector receives the current request and returns `True` if the request should skip layout assembly and return only the partial view response.
@@ -140,6 +140,7 @@ DJ_LAYOUTS = {
 ```
 
 Built-in detectors:
+
 - `dj_layouts.detection.never_detector` — always `False` (layout always assembled)
 - `dj_layouts.detection.htmx_detector` — `True` when `HX-Request: true` header is present
 - `dj_layouts.detection.query_param_detector` — `True` when `?_partial=1` is in the query string
@@ -152,7 +153,7 @@ See [Partial Detection](partial-detection.md) for the full reference.
 
 ## `DETECTOR_RAISE_EXCEPTIONS`
 
-**Type:** `bool`  
+**Type:** `bool`
 **Default:** `False`
 
 When `False` (default), exceptions raised inside a detector are logged at `WARNING` level and the detector is treated as returning `False`. Layout assembly proceeds normally.
