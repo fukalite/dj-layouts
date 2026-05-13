@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import Any, cast
 
 from django.conf import settings
 from django.core.cache import caches
@@ -285,7 +285,9 @@ async def _async_assemble_layout(
     # ── Cache check (sequential, in definition order) ─────────────────────────
     # Panels with a cache hit are stored here; misses (and uncached) go to tasks.
     non_none: list[tuple[str, Panel]] = [
-        (name, panel) for name, panel in effective_panels.items() if panel is not None
+        (name, cast(Panel, panel))
+        for name, panel in effective_panels.items()
+        if panel is not None
     ]
 
     cache_hits: dict[str, tuple[str, dict]] = {}  # panel_name -> (html, queue_snapshot)
@@ -325,8 +327,8 @@ async def _async_assemble_layout(
 
     # ── Assemble in definition order ──────────────────────────────────────────
     rendered_panels: dict[str, str] = {"content": content_html}
-    for panel_name, panel in effective_panels.items():
-        if panel is None:
+    for panel_name, panel_or_none in effective_panels.items():
+        if panel_or_none is None:
             rendered_panels[panel_name] = ""
 
     render_idx = 0
