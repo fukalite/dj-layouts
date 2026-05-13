@@ -163,10 +163,7 @@ def simple_queue_layout(locmem_templates):
     locmem_templates(
         {
             "layouts/sq.html": (
-                "{% load layouts %}"
-                "{% renderscripts %}"
-                "|"
-                "{% renderstyles %}"
+                "{% load layouts %}{% renderscripts %}|{% renderstyles %}"
             ),
             "content_empty.html": "",
         }

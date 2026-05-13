@@ -1,4 +1,3 @@
-
 from dj_layouts.context import FrozenLayoutContext, LayoutContext
 from dj_layouts.request_utils import clone_request_as_get
 
