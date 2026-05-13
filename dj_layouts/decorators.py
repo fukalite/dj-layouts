@@ -18,6 +18,10 @@ from dj_layouts.services.requests import (
 
 _PANEL_ONLY_MARKER = "_is_panel_only"
 
+# Populated at decoration time when @layout or @async_layout is called with a string.
+# Consumed by dj_layouts.checks at AppConfig.ready() to validate all refs resolve.
+_deferred_layout_refs: list[tuple[str, str]] = []
+
 
 def layout(
     layout_class: type[Layout] | str,
@@ -44,6 +48,9 @@ def layout(
                 f"Cannot apply @layout to a @panel_only view ({view_func.__name__!r}). "
                 "These decorators are mutually exclusive."
             )
+
+        if isinstance(layout_class, str):
+            _deferred_layout_refs.append((layout_class, view_func.__qualname__))
 
         @functools.wraps(view_func)
         def wrapper(request: Any, *args: Any, **kwargs: Any) -> Any:
@@ -150,6 +157,9 @@ def async_layout(
                 f"@async_layout requires an async view function; {view_func.__name__!r} is sync. "
                 "Use @layout for sync views."
             )
+
+        if isinstance(layout_class, str):
+            _deferred_layout_refs.append((layout_class, view_func.__qualname__))
 
         @functools.wraps(view_func)
         async def wrapper(request: Any, *args: Any, **kwargs: Any) -> Any:
