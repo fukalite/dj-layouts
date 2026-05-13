@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Callable
+
+from django.http import HttpRequest
 
 
 logger = logging.getLogger(__name__)
@@ -24,13 +26,13 @@ class CacheConfig:
     revalidate support and are silently ignored in v1.
     """
 
-    key_func: Callable[[Any], str]
+    key_func: Callable[[HttpRequest], str]
     timeout: int
     backend: str = "default"
     stale_ttl: int = 0
-    refresh_func: Callable[..., Any] | None = None
+    refresh_func: Callable[[HttpRequest], str] | None = None
 
-    def make_key(self, panel_name: str, request: Any) -> str:
+    def make_key(self, panel_name: str, request: HttpRequest) -> str:
         vary = self.key_func(request)
         if vary:
             return f"layouts:panel:{panel_name}:{vary}"
@@ -40,7 +42,7 @@ class CacheConfig:
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
 
-def _get_user_id(request: Any) -> str:
+def _get_user_id(request: HttpRequest) -> str:
     """
     Return a string identifying the current user.
 
@@ -52,6 +54,33 @@ def _get_user_id(request: Any) -> str:
     if user is None or not getattr(user, "is_authenticated", False):
         return "anonymous"
     return str(user.pk)
+
+
+def _sitewide_key(request: HttpRequest) -> str:
+    """Return an empty vary string so all requests share one cache entry."""
+    return ""
+
+
+def _path_key(request: HttpRequest) -> str:
+    """Return the request path as the vary string."""
+    return request.path
+
+
+def _user_per_path_key(request: HttpRequest) -> str:
+    """Return ``<user_id>:<path>`` as the vary string."""
+    return f"{_get_user_id(request)}:{request.path}"
+
+
+def _session_key(request: HttpRequest) -> str:
+    """
+    Return the session key as the vary string.
+
+    Falls back to ``"no-session"`` if the session middleware is not installed
+    or the session has not yet been saved.
+    """
+    session = getattr(request, "session", None)
+    session_key = getattr(session, "session_key", None)
+    return session_key or "no-session"
 
 
 # ── Shortcut functions ────────────────────────────────────────────────────────
@@ -68,7 +97,7 @@ def sitewide(timeout: int, *, backend: str = "default") -> CacheConfig:
         All users (including anonymous) share the same cache entry. If the
         panel contains user-specific content, use :func:`per_user` instead.
     """
-    return CacheConfig(key_func=lambda r: "", timeout=timeout, backend=backend)
+    return CacheConfig(key_func=_sitewide_key, timeout=timeout, backend=backend)
 
 
 def per_user(timeout: int, *, backend: str = "default") -> CacheConfig:
@@ -89,16 +118,12 @@ def per_path(timeout: int, *, backend: str = "default") -> CacheConfig:
     Useful for panels that vary by the current page but not by user — e.g. a
     breadcrumb trail or page-specific sidebar.
     """
-    return CacheConfig(key_func=lambda r: r.path, timeout=timeout, backend=backend)
+    return CacheConfig(key_func=_path_key, timeout=timeout, backend=backend)
 
 
 def per_user_per_path(timeout: int, *, backend: str = "default") -> CacheConfig:
     """Cache panel output per user *and* per URL path."""
-
-    def _key(request: Any) -> str:
-        return f"{_get_user_id(request)}:{request.path}"
-
-    return CacheConfig(key_func=_key, timeout=timeout, backend=backend)
+    return CacheConfig(key_func=_user_per_path_key, timeout=timeout, backend=backend)
 
 
 def per_session(timeout: int, *, backend: str = "default") -> CacheConfig:
@@ -109,22 +134,16 @@ def per_session(timeout: int, *, backend: str = "default") -> CacheConfig:
     ``"no-session"`` if the session middleware is not installed or the session
     has not yet been created.
     """
-
-    def _key(request: Any) -> str:
-        session = getattr(request, "session", None)
-        key = getattr(session, "session_key", None)
-        return key or "no-session"
-
-    return CacheConfig(key_func=_key, timeout=timeout, backend=backend)
+    return CacheConfig(key_func=_session_key, timeout=timeout, backend=backend)
 
 
 def custom(
-    key_func: Callable[[Any], str],
+    key_func: Callable[[HttpRequest], str],
     timeout: int,
     *,
     backend: str = "default",
     stale_ttl: int = 0,
-    refresh_func: Callable[..., Any] | None = None,
+    refresh_func: Callable[[HttpRequest], str] | None = None,
 ) -> CacheConfig:
     """
     Full control over cache key construction.

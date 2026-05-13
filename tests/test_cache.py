@@ -41,6 +41,7 @@ def clear_registry():
 @pytest.fixture(autouse=True)
 def clear_cache():
     from django.core.cache import caches
+
     yield
     caches["default"].clear()
 
@@ -200,9 +201,7 @@ def test_cache_disabled_globally_always_rerenders(simple_layout, rf, settings):
 def test_per_user_cache_different_entries_per_user(locmem_templates, rf):
     locmem_templates(
         {
-            "layouts/pu.html": (
-                "{% load layouts %}{% panel 'nav' %}{% endpanel %}"
-            ),
+            "layouts/pu.html": ("{% load layouts %}{% panel 'nav' %}{% endpanel %}"),
             "content.html": "",
         }
     )

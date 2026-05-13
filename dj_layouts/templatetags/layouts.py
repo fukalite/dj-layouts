@@ -58,7 +58,9 @@ class AddScriptNode(template.Node):
             add_script(request, inline=content)
         else:
             src = self.src_expr.resolve(context)  # type: ignore[union-attr]
-            add_script(request, src, is_async=self.is_async, is_deferred=self.is_deferred)
+            add_script(
+                request, src, is_async=self.is_async, is_deferred=self.is_deferred
+            )
         return ""
 
 
@@ -135,7 +137,7 @@ def addstyle_tag(
     media = ""
     for bit in bits[2:]:
         if bit.startswith("media="):
-            media = bit[len("media="):].strip("\"'")
+            media = bit[len("media=") :].strip("\"'")
     return AddStyleNode(href_expr=href_expr, media=media)
 
 

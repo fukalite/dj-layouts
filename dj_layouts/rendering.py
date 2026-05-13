@@ -289,7 +289,9 @@ async def _async_assemble_layout(
     ]
 
     cache_hits: dict[str, tuple[str, dict]] = {}  # panel_name -> (html, queue_snapshot)
-    needs_render: list[tuple[str, Panel, str | None]] = []  # (name, panel, cache_key|None)
+    needs_render: list[
+        tuple[str, Panel, str | None]
+    ] = []  # (name, panel, cache_key|None)
 
     for panel_name, panel in non_none:
         cache_cfg = panel.cache
@@ -355,7 +357,9 @@ async def _async_assemble_layout(
             queue_snapshot = _snapshot_queues(panel_request)
             cache_cfg = panel.cache  # type: ignore[union-attr]
             backend = caches[cache_cfg.backend]
-            await backend.aset(cache_key, (html, queue_snapshot), timeout=cache_cfg.timeout)
+            await backend.aset(
+                cache_key, (html, queue_snapshot), timeout=cache_cfg.timeout
+            )
 
         _merge_panel_queues(request, panel_request)
 
