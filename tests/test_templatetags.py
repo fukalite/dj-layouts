@@ -90,9 +90,7 @@ def test_panel_tag_fallback_can_contain_html(render_panel):
 
 
 def test_addscript_url_enqueues_script(render_with_queues):
-    html, request = render_with_queues(
-        "{% load layouts %}{% addscript '/js/app.js' %}"
-    )
+    html, request = render_with_queues("{% load layouts %}{% addscript '/js/app.js' %}")
     from dj_layouts.queues import ScriptItem
 
     assert ScriptItem(src="/js/app.js") in request.layout_queues["scripts"]._items
@@ -134,9 +132,7 @@ def test_addscript_produces_no_output(render_with_queues):
 
 
 def test_addstyle_url_enqueues_style(render_with_queues):
-    _, request = render_with_queues(
-        "{% load layouts %}{% addstyle '/css/app.css' %}"
-    )
+    _, request = render_with_queues("{% load layouts %}{% addstyle '/css/app.css' %}")
     from dj_layouts.queues import StyleItem
 
     assert StyleItem(href="/css/app.css") in request.layout_queues["styles"]._items
@@ -166,7 +162,9 @@ def test_addstyle_block_form_strips_whitespace(render_with_queues):
 def test_enqueue_adds_to_named_queue(render_with_queues, locmem_templates):
     from dj_layouts.queues import RenderQueue
 
-    locmem_templates({"t.html": "{% load layouts %}{% enqueue 'extras' %}<meta>{% endenqueue %}"})
+    locmem_templates(
+        {"t.html": "{% load layouts %}{% enqueue 'extras' %}<meta>{% endenqueue %}"}
+    )
     extra = {"extras": RenderQueue(template="e.html")}
     _, request = render_with_queues(
         "{% load layouts %}{% enqueue 'extras' %}<meta>{% endenqueue %}", extra
@@ -216,10 +214,12 @@ def test_renderstyles_noop_when_empty(render_with_queues):
 def test_renderqueue_calls_queue_render(locmem_templates, rf):
     from dj_layouts.queues import RenderQueue
 
-    locmem_templates({
-        "t.html": "{% load layouts %}{% renderqueue 'extras' %}",
-        "e.html": "{% for item in items %}{{ item|safe }}{% endfor %}",
-    })
+    locmem_templates(
+        {
+            "t.html": "{% load layouts %}{% renderqueue 'extras' %}",
+            "e.html": "{% for item in items %}{{ item|safe }}{% endfor %}",
+        }
+    )
 
     request = rf.get("/")
     request.layout_queues = {"extras": RenderQueue(template="e.html")}
@@ -237,7 +237,5 @@ def test_renderqueue_noop_when_empty(locmem_templates, render_with_queues):
 
     locmem_templates({"e.html": "items"})
     extra = {"extras": RenderQueue(template="e.html")}
-    html, _ = render_with_queues(
-        "{% load layouts %}{% renderqueue 'extras' %}", extra
-    )
+    html, _ = render_with_queues("{% load layouts %}{% renderqueue 'extras' %}", extra)
     assert html == ""

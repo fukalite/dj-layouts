@@ -62,12 +62,52 @@ See [Error Handling](error-handling.md) for details on `on_panel_error()`, `Pane
 
 ---
 
+## `LAYOUTS_CACHE_ENABLED`
+
+**Type:** `bool`  
+**Default:** `True`
+
+When set to `False`, all panel caching is disabled globally — panels always re-render even when a `cache=` argument is provided in their `Panel(...)` definition.
+
+This is useful in development or testing where you want predictable, uncached behaviour:
+
+```python
+# settings/local.py
+LAYOUTS_CACHE_ENABLED = False
+```
+
+Note that this setting does not affect Django's own cache framework — it only controls whether dj-layouts writes to or reads from the cache for panel results.
+
+---
+
+## `LAYOUTS_CACHE_BACKEND`
+
+**Type:** `str`  
+**Default:** `"default"`
+
+The name of the Django cache backend used as the default for panel caching when no `backend=` is specified on the `CacheConfig`. Must be a key in `settings.CACHES`.
+
+```python
+CACHES = {
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+    "panels":  {"BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache", ...},
+}
+
+LAYOUTS_CACHE_BACKEND = "panels"
+```
+
+Individual panels can always override the backend per-panel:
+
+```python
+Panel("myapp:nav", cache=cache.sitewide(timeout=3600, backend="panels"))
+```
+
+---
+
 ## Future settings
 
 The following settings are **not yet implemented** and are listed here as a reference for future versions:
 
 - `LAYOUTS_PARTIAL_DETECTORS` — list of partial detector classes (planned)
-- `LAYOUTS_CACHE_ENABLED` — enable panel-level caching (planned)
-- `LAYOUTS_CACHE_BACKEND` — cache backend for panel caching (planned)
 
-Do not configure these settings in the current version — they have no effect.
+Do not configure this setting in the current version — it has no effect.
