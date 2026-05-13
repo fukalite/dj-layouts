@@ -293,6 +293,7 @@ async def _async_assemble_layout(
 
     for panel_name, panel in non_none:
         cache_cfg = panel.cache
+        cache_key = None
         if cache_cfg is not None and _cache_enabled():
             cache_key = cache_cfg.make_key(panel_name, request)
             backend = caches[cache_cfg.backend]
@@ -302,9 +303,7 @@ async def _async_assemble_layout(
                 cache_hits[panel_name] = cached
                 continue
             logger.debug("Panel cache miss: %r (key=%s)", panel_name, cache_key)
-            needs_render.append((panel_name, panel, cache_key))
-        else:
-            needs_render.append((panel_name, panel, None))
+        needs_render.append((panel_name, panel, cache_key))
 
     # ── Concurrent rendering for cache misses ─────────────────────────────────
     panel_requests = [clone_request_as_get(request) for _ in needs_render]
