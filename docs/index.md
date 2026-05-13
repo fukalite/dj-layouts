@@ -1,18 +1,20 @@
 # dj-layouts
 
-**dj-layouts** is a Django layout composition library that inverts the normal template-inheritance model.
+> A view-composition pattern for Django, inspired by Zend Framework's layouts/views/view-helpers.
+
+**dj-layouts** is a Django layout composition library that inverts the normal template-inheritance model, making it easier to maintain low coupling in your project.
 
 Instead of a base template with `{% block %}` holes that child templates fill, your views return their own content as HTML partials. A `Layout` class assembles the full page by calling other views as named **panels** — concurrently under ASGI.
 
 ## The mental model shift
 
-| Classic Django | dj-layouts |
-|---|---|
-| Base template owns the page structure | `Layout` class owns the page structure |
-| Child template fills `{% block content %}` | Content view returns its own partial HTML |
-| Sidebar is a template include | Sidebar is a panel — an independent view |
-| All template logic in one render pass | Panels render concurrently via `asyncio.gather` |
-| Base and child tightly coupled | Views never import each other |
+| Classic Django                             | dj-layouts                                      |
+| ------------------------------------------ | ----------------------------------------------- |
+| Base template owns the page structure      | `Layout` class owns the page structure          |
+| Child template fills `{% block content %}` | Content view returns its own partial HTML       |
+| Sidebar is a template include              | Sidebar is a panel — an independent view        |
+| All template logic in one render pass      | Panels render concurrently via `asyncio.gather` |
+| Base and child tightly coupled             | Views never import each other                   |
 
 The key insight: **views are HTMX-native partials by default**. A view decorated with `@layout` renders the full page when called directly; if called as a panel it just returns its partial. Your view code stays the same either way.
 
@@ -69,18 +71,18 @@ That's it. `homepage` renders the full page. The sidebar runs as a separate view
 
 ## Where to go next
 
-| Topic | Page |
-|---|---|
-| First layout, first view | [Getting Started](getting-started.md) |
-| How it all fits together | [Concepts](concepts.md) |
-| `Layout` class reference | [Layouts](layouts.md) |
-| `Panel` sources and options | [Panels](panels.md) |
-| Script/style queues | [Render Queues](render-queues.md) |
-| Layout context | [Layout Context](layout-context.md) |
-| `@layout`, `@panel_only`, `@async_layout` | [Decorators](decorators.md) |
-| Concurrent panel rendering | [Async](async.md) |
-| Error hooks and debug mode | [Error Handling](error-handling.md) |
-| Common patterns | [Patterns](patterns.md) |
-| Security considerations | [Security](security.md) |
-| `request.layout_*` attributes | [Request Attributes](request-attributes.md) |
-| `DJ_LAYOUTS` settings dict | [Settings](settings.md) |
+| Topic                                     | Page                                        |
+| ----------------------------------------- | ------------------------------------------- |
+| First layout, first view                  | [Getting Started](getting-started.md)       |
+| How it all fits together                  | [Concepts](concepts.md)                     |
+| `Layout` class reference                  | [Layouts](layouts.md)                       |
+| `Panel` sources and options               | [Panels](panels.md)                         |
+| Script/style queues                       | [Render Queues](render-queues.md)           |
+| Layout context                            | [Layout Context](layout-context.md)         |
+| `@layout`, `@panel_only`, `@async_layout` | [Decorators](decorators.md)                 |
+| Concurrent panel rendering                | [Async](async.md)                           |
+| Error hooks and debug mode                | [Error Handling](error-handling.md)         |
+| Common patterns                           | [Patterns](patterns.md)                     |
+| Security considerations                   | [Security](security.md)                     |
+| `request.layout_*` attributes             | [Request Attributes](request-attributes.md) |
+| `DJ_LAYOUTS` settings dict                | [Settings](settings.md)                     |
