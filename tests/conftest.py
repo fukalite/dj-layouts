@@ -259,7 +259,9 @@ def wagtail_mixin():
 
     sys.modules.pop("dj_layouts.wagtail", None)
 
-    with patch.dict(sys.modules, {"wagtail": fake_wagtail, "wagtail.models": fake_models}):
+    with patch.dict(
+        sys.modules, {"wagtail": fake_wagtail, "wagtail.models": fake_models}
+    ):
         mod = importlib.import_module("dj_layouts.wagtail")
         yield mod.WagtailLayoutMixin, FakePage
 
