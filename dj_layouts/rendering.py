@@ -213,9 +213,10 @@ def _replay_queue_snapshot(request: Any, snapshot: dict[str, list]) -> None:
     """Replay cached queue items into the main request's queues."""
     layout_queues: dict = getattr(request, "layout_queues", {})
     for name, items in snapshot.items():
-        if name in layout_queues:
-            for item in items:
-                layout_queues[name].add(item)
+        if name not in layout_queues:
+            continue
+        for item in items:
+            layout_queues[name].add(item)
 
 
 # ── Async assembly ────────────────────────────────────────────────────────────
