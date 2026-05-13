@@ -35,7 +35,7 @@ account_nav = Panel("myapp:account_nav", cache=cache.per_user(timeout=900))
 ```
 
 !!! warning "All anonymous users share one cache entry"
-    With `cache.per_user()`, every unauthenticated visitor shares the same cached output. If anonymous panel output can vary by any request attribute (cookie, query parameter, session value), use `cache.custom()` with an explicit `key_func` instead.
+With `cache.per_user()`, every unauthenticated visitor shares the same cached output. If anonymous panel output can vary by any request attribute (cookie, query parameter, session value), use `cache.custom()` with an explicit `key_func` instead.
 
 ### `cache.per_path(timeout, *, backend="default")`
 
@@ -85,14 +85,14 @@ layouts:panel:{panel_name}:{vary}       # all other strategies
 
 For example:
 
-| Strategy | Panel name | Vary | Key |
-|---|---|---|---|
-| `sitewide` | `nav` | — | `layouts:panel:nav` |
-| `per_user` | `nav` | user pk `42` | `layouts:panel:nav:42` |
-| `per_user` | `nav` | anonymous | `layouts:panel:nav:anonymous` |
-| `per_path` | `nav` | `/about/` | `layouts:panel:nav:/about/` |
-| `per_session` | `cart` | `abc123` | `layouts:panel:cart:abc123` |
-| `custom` | `price` | `GBP` | `layouts:panel:price:GBP` |
+| Strategy      | Panel name | Vary         | Key                           |
+| ------------- | ---------- | ------------ | ----------------------------- |
+| `sitewide`    | `nav`      | —            | `layouts:panel:nav`           |
+| `per_user`    | `nav`      | user pk `42` | `layouts:panel:nav:42`        |
+| `per_user`    | `nav`      | anonymous    | `layouts:panel:nav:anonymous` |
+| `per_path`    | `nav`      | `/about/`    | `layouts:panel:nav:/about/`   |
+| `per_session` | `cart`     | `abc123`     | `layouts:panel:cart:abc123`   |
+| `custom`      | `price`    | `GBP`        | `layouts:panel:price:GBP`     |
 
 ## Render queues and caching
 
@@ -124,20 +124,20 @@ CACHES = {
 nav = Panel("myapp:nav", cache=cache.sitewide(timeout=3600, backend="redis"))
 ```
 
-You can also change the global default backend with the `LAYOUTS_CACHE_BACKEND` setting:
+You can also change the global default backend with `CACHE_BACKEND` in your `DJ_LAYOUTS` settings dict:
 
 ```python
 # settings.py
-LAYOUTS_CACHE_BACKEND = "redis"
+DJ_LAYOUTS = {"CACHE_BACKEND": "redis"}
 ```
 
 ## Disabling caching globally
 
-Set `LAYOUTS_CACHE_ENABLED = False` to disable all panel caching regardless of `cache=` arguments:
+Set `CACHE_ENABLED: False` in `DJ_LAYOUTS` to disable all panel caching regardless of `cache=` arguments:
 
 ```python
 # settings/local.py
-LAYOUTS_CACHE_ENABLED = False
+DJ_LAYOUTS = {"CACHE_ENABLED": False}
 ```
 
 This is useful in development and testing where you want deterministic, uncached rendering.

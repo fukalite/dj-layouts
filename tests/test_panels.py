@@ -1,21 +1,8 @@
 import pytest
 from django.http import HttpResponse
-from django.test import RequestFactory
 
 from dj_layouts.context import LayoutContext
 from dj_layouts.panels import Panel, resolve_panel_source
-
-
-@pytest.fixture()
-def rf():
-    return RequestFactory()
-
-
-@pytest.fixture()
-def request_with_context(rf):
-    req = rf.get("/")
-    req.layout_context = LayoutContext({"site": "Test"})
-    return req
 
 
 # ── None source ───────────────────────────────────────────────────────────────
@@ -127,18 +114,6 @@ def _nav_view(request):
 def _ctx_view(request, **kwargs):
     limit = request.GET.get("limit", kwargs.get("limit", "?"))
     return HttpResponse(f"<p>items={limit}</p>")
-
-
-@pytest.fixture()
-def url_conf(settings):
-    from django.urls import path
-
-    patterns = [
-        path("nav/", _nav_view, name="test_nav"),
-        path("ctx/", _ctx_view, name="test_ctx"),
-    ]
-    settings.ROOT_URLCONF = "tests.test_panels"
-    return patterns
 
 
 def test_url_name_calls_view(rf, url_conf):

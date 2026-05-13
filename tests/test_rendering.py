@@ -1,23 +1,9 @@
 import pytest
 from django.http import HttpResponse
-from django.test import RequestFactory
 
-from dj_layouts.base import Layout, _registry
+from dj_layouts.base import Layout
 from dj_layouts.panels import Panel
 from dj_layouts.rendering import render_with_layout
-
-
-@pytest.fixture(autouse=True)
-def clear_registry():
-    snapshot = dict(_registry)
-    yield
-    _registry.clear()
-    _registry.update(snapshot)
-
-
-@pytest.fixture()
-def rf():
-    return RequestFactory()
 
 
 # ── render_with_layout ────────────────────────────────────────────────────────
@@ -340,7 +326,7 @@ def test_panel_error_raises_panel_render_error_in_debug(rf, locmem_templates, se
 def test_layouts_debug_errors_false_overrides_debug(rf, locmem_templates, settings):
     """LAYOUTS_DEBUG_ERRORS=False suppresses PanelRenderError even in DEBUG."""
     settings.DEBUG = True
-    settings.LAYOUTS_DEBUG_ERRORS = False
+    settings.DJ_LAYOUTS = {"DEBUG_ERRORS": False}
     locmem_templates(
         {
             "layouts/t.html": "{% load layouts %}{% panel 'bad' %}{% endpanel %}{% panel 'content' %}{% endpanel %}",
@@ -370,7 +356,7 @@ def test_layouts_debug_errors_true_overrides_production(rf, locmem_templates, se
     from dj_layouts.errors import PanelRenderError
 
     settings.DEBUG = False
-    settings.LAYOUTS_DEBUG_ERRORS = True
+    settings.DJ_LAYOUTS = {"DEBUG_ERRORS": True}
     locmem_templates(
         {
             "layouts/t.html": "{% load layouts %}{% panel 'bad' %}{% endpanel %}{% panel 'content' %}{% endpanel %}",

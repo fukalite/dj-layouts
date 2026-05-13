@@ -10,6 +10,17 @@ from django.http import HttpRequest
 logger = logging.getLogger(__name__)
 
 
+def get_default_backend() -> str:
+    from dj_layouts.settings import dj_layouts_settings
+
+    return dj_layouts_settings.CACHE_BACKEND
+
+
+# A cache key function receives the current request and returns the vary
+# portion of the cache key as a plain string.
+KeyFunc = Callable[[HttpRequest], str]
+
+
 # ── CacheConfig dataclass ─────────────────────────────────────────────────────
 
 
@@ -26,11 +37,11 @@ class CacheConfig:
     revalidate support and are silently ignored in v1.
     """
 
-    key_func: Callable[[HttpRequest], str]
+    key_func: KeyFunc
     timeout: int
     backend: str = "default"
     stale_ttl: int = 0
-    refresh_func: Callable[[HttpRequest], str] | None = None
+    refresh_func: KeyFunc | None = None
 
     def make_key(self, panel_name: str, request: HttpRequest) -> str:
         vary = self.key_func(request)
@@ -86,7 +97,7 @@ def _session_key(request: HttpRequest) -> str:
 # ── Shortcut functions ────────────────────────────────────────────────────────
 
 
-def sitewide(timeout: int, *, backend: str = "default") -> CacheConfig:
+def sitewide(timeout: int, *, backend: str | None = None) -> CacheConfig:
     """
     Cache panel output once for all users and all paths.
 
@@ -97,10 +108,14 @@ def sitewide(timeout: int, *, backend: str = "default") -> CacheConfig:
         All users (including anonymous) share the same cache entry. If the
         panel contains user-specific content, use :func:`per_user` instead.
     """
-    return CacheConfig(key_func=_sitewide_key, timeout=timeout, backend=backend)
+    return CacheConfig(
+        key_func=_sitewide_key,
+        timeout=timeout,
+        backend=backend or get_default_backend(),
+    )
 
 
-def per_user(timeout: int, *, backend: str = "default") -> CacheConfig:
+def per_user(timeout: int, *, backend: str | None = None) -> CacheConfig:
     """
     Cache panel output per authenticated user.
 
@@ -108,25 +123,33 @@ def per_user(timeout: int, *, backend: str = "default") -> CacheConfig:
     single ``"anonymous"`` cache entry — document this clearly if your panel
     may render different content for different anonymous sessions.
     """
-    return CacheConfig(key_func=_get_user_id, timeout=timeout, backend=backend)
+    return CacheConfig(
+        key_func=_get_user_id, timeout=timeout, backend=backend or get_default_backend()
+    )
 
 
-def per_path(timeout: int, *, backend: str = "default") -> CacheConfig:
+def per_path(timeout: int, *, backend: str | None = None) -> CacheConfig:
     """
     Cache panel output per URL path, shared across all users.
 
     Useful for panels that vary by the current page but not by user — e.g. a
     breadcrumb trail or page-specific sidebar.
     """
-    return CacheConfig(key_func=_path_key, timeout=timeout, backend=backend)
+    return CacheConfig(
+        key_func=_path_key, timeout=timeout, backend=backend or get_default_backend()
+    )
 
 
-def per_user_per_path(timeout: int, *, backend: str = "default") -> CacheConfig:
+def per_user_per_path(timeout: int, *, backend: str | None = None) -> CacheConfig:
     """Cache panel output per user *and* per URL path."""
-    return CacheConfig(key_func=_user_per_path_key, timeout=timeout, backend=backend)
+    return CacheConfig(
+        key_func=_user_per_path_key,
+        timeout=timeout,
+        backend=backend or get_default_backend(),
+    )
 
 
-def per_session(timeout: int, *, backend: str = "default") -> CacheConfig:
+def per_session(timeout: int, *, backend: str | None = None) -> CacheConfig:
     """
     Cache panel output per session.
 
@@ -134,16 +157,18 @@ def per_session(timeout: int, *, backend: str = "default") -> CacheConfig:
     ``"no-session"`` if the session middleware is not installed or the session
     has not yet been created.
     """
-    return CacheConfig(key_func=_session_key, timeout=timeout, backend=backend)
+    return CacheConfig(
+        key_func=_session_key, timeout=timeout, backend=backend or get_default_backend()
+    )
 
 
 def custom(
-    key_func: Callable[[HttpRequest], str],
+    key_func: KeyFunc,
     timeout: int,
     *,
-    backend: str = "default",
+    backend: str | None = None,
     stale_ttl: int = 0,
-    refresh_func: Callable[[HttpRequest], str] | None = None,
+    refresh_func: KeyFunc | None = None,
 ) -> CacheConfig:
     """
     Full control over cache key construction.
@@ -155,7 +180,7 @@ def custom(
     return CacheConfig(
         key_func=key_func,
         timeout=timeout,
-        backend=backend,
+        backend=backend or get_default_backend(),
         stale_ttl=stale_ttl,
         refresh_func=refresh_func,
     )

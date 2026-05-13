@@ -4,7 +4,7 @@ Reference for `Panel` — the configuration object that declares how a named reg
 
 ## What is a Panel?
 
-A `Panel` is a class attribute on a `Layout`. It describes the *source* of the HTML for that region. The Layout engine resolves the source at request time and makes the result available in the layout template via `{% panel "name" %}`.
+A `Panel` is a class attribute on a `Layout`. It describes the _source_ of the HTML for that region. The Layout engine resolves the source at request time and makes the result available in the layout template via `{% panel "name" %}`.
 
 ```python
 from dj_layouts import Layout, Panel
@@ -101,15 +101,15 @@ In the template:
 
 ## All source type behaviours at a glance
 
-| Source | Contains `:` | How it resolves |
-|---|---|---|
-| `Panel("app:name")` | Yes | `reverse("app:name")` → call view |
-| `Panel("plain string")` | No | Return as literal HTML |
-| `Panel(url_name="home")` | N/A | Always `reverse("home")` → call view |
-| `Panel(literal="x:y")` | Yes | Return as literal HTML (never reversed) |
-| `Panel(callable)` | N/A | Call `callable(request, **context)` |
-| `Panel([...])` | N/A | Resolve each item, join results |
-| `Panel(None)` or `Panel()` | N/A | Empty — template fallback renders |
+| Source                     | Contains `:` | How it resolves                         |
+| -------------------------- | ------------ | --------------------------------------- |
+| `Panel("app:name")`        | Yes          | `reverse("app:name")` → call view       |
+| `Panel("plain string")`    | No           | Return as literal HTML                  |
+| `Panel(url_name="home")`   | N/A          | Always `reverse("home")` → call view    |
+| `Panel(literal="x:y")`     | Yes          | Return as literal HTML (never reversed) |
+| `Panel(callable)`          | N/A          | Call `callable(request, **context)`     |
+| `Panel([...])`             | N/A          | Resolve each item, join results         |
+| `Panel(None)` or `Panel()` | N/A          | Empty — template fallback renders       |
 
 ## Keyword arguments
 
@@ -132,7 +132,7 @@ Panel("myapp:item_detail", context={"pk": 42})
 This is intentional — it lets you pin a panel to a specific object without creating a dedicated URL.
 
 !!! warning "Never put untrusted values in `Panel.context`"
-    `Panel.context` is **configuration-time data** — it's fixed when your `layouts.py` module loads. Do not use it to pass user-supplied or request-time data. For request-time data, use `get_layout_context()` or have the panel view fetch it from the database itself.
+`Panel.context` is **configuration-time data** — it's fixed when your `layouts.py` module loads. Do not use it to pass user-supplied or request-time data. For request-time data, use `get_layout_context()` or have the panel view fetch it from the database itself.
 
     Putting `request.GET["user_id"]` in a `Panel.context` is not possible (there's no request at class-definition time) and is not the intended pattern. The panel view should read `request.GET` directly.
 
@@ -224,14 +224,14 @@ class DefaultLayout(Layout):
 
 ### Cache variation strategies
 
-| Function | Cache key varies by | Use case |
-|---|---|---|
-| `cache.sitewide(timeout=...)` | Nothing — one entry for all users and paths | Global nav, site footer |
-| `cache.per_user(timeout=...)` | User identity (`user.pk`, or `"anonymous"`) | User-specific sidebars |
-| `cache.per_path(timeout=...)` | Request path | Path-sensitive widgets |
-| `cache.per_user_per_path(timeout=...)` | User + path | User-specific per-page content |
-| `cache.per_session(timeout=...)` | Session key | Session-scoped panels |
-| `cache.custom(key_func=..., timeout=...)` | Return value of `key_func(request)` | Any other variation |
+| Function                                  | Cache key varies by                         | Use case                       |
+| ----------------------------------------- | ------------------------------------------- | ------------------------------ |
+| `cache.sitewide(timeout=...)`             | Nothing — one entry for all users and paths | Global nav, site footer        |
+| `cache.per_user(timeout=...)`             | User identity (`user.pk`, or `"anonymous"`) | User-specific sidebars         |
+| `cache.per_path(timeout=...)`             | Request path                                | Path-sensitive widgets         |
+| `cache.per_user_per_path(timeout=...)`    | User + path                                 | User-specific per-page content |
+| `cache.per_session(timeout=...)`          | Session key                                 | Session-scoped panels          |
+| `cache.custom(key_func=..., timeout=...)` | Return value of `key_func(request)`         | Any other variation            |
 
 All functions accept an optional `backend=` argument to specify which Django cache backend to use (default: `"default"`).
 
@@ -240,7 +240,7 @@ All functions accept an optional `backend=` argument to specify which Django cac
 For `per_user` and `per_user_per_path`, anonymous users (those where `request.user.is_authenticated` is `False`, or where `request.user` doesn't exist) are all treated as the same identity using the string key `"anonymous"`.
 
 !!! warning "All anonymous users share one cache entry"
-    With `cache.per_user()`, every anonymous visitor to your site serves from the same cache entry. If your panel output varies by any request attribute beyond the user identity (e.g. a cookie, a session value, a query parameter), use `cache.custom()` with an appropriate `key_func` instead.
+With `cache.per_user()`, every anonymous visitor to your site serves from the same cache entry. If your panel output varies by any request attribute beyond the user identity (e.g. a cookie, a session value, a query parameter), use `cache.custom()` with an appropriate `key_func` instead.
 
 ### Render queues and caching
 
@@ -258,11 +258,11 @@ class DefaultLayout(Layout):
 
 ### Global cache toggle
 
-Set `LAYOUTS_CACHE_ENABLED = False` in your Django settings to disable all panel caching globally. This is useful in development or testing:
+Set `CACHE_ENABLED: False` in your `DJ_LAYOUTS` settings dict to disable all panel caching globally. Useful in development or testing:
 
 ```python
 # settings/local.py
-LAYOUTS_CACHE_ENABLED = False
+DJ_LAYOUTS = {"CACHE_ENABLED": False}
 ```
 
 See [Settings](settings.md) for the full reference.

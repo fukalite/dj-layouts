@@ -1,46 +1,16 @@
 import pytest
 from django.http import HttpResponse
-from django.test import RequestFactory
 
 from dj_layouts.base import Layout, _registry
 from dj_layouts.decorators import layout, panel_only
 from dj_layouts.panels import Panel
 
 
-@pytest.fixture(autouse=True)
-def clear_registry():
-    snapshot = dict(_registry)
-    yield
-    _registry.clear()
-    _registry.update(snapshot)
-
-
-@pytest.fixture()
-def rf():
-    return RequestFactory()
-
-
-@pytest.fixture()
-def simple_layout(settings, locmem_templates):
-    locmem_templates(
-        {
-            "layouts/simple.html": (
-                "{% load layouts %}LAYOUT:{% panel 'content' %}no content{% endpanel %}"
-            ),
-        }
-    )
-
-    class SimpleLayout(Layout):
-        template = "layouts/simple.html"
-
-    return SimpleLayout
-
-
 # ── @layout decorator ─────────────────────────────────────────────────────────
 
 
-def test_layout_decorator_wraps_response(rf, simple_layout):
-    @layout(simple_layout)
+def test_layout_decorator_wraps_response(rf, decorator_layout):
+    @layout(decorator_layout)
     def my_view(request):
         return HttpResponse("<h1>Hello</h1>")
 
@@ -50,10 +20,10 @@ def test_layout_decorator_wraps_response(rf, simple_layout):
     assert b"<h1>Hello</h1>" in response.content
 
 
-def test_layout_decorator_sets_layout_role_main(rf, simple_layout):
+def test_layout_decorator_sets_layout_role_main(rf, decorator_layout):
     role_seen = []
 
-    @layout(simple_layout)
+    @layout(decorator_layout)
     def my_view(request):
         role_seen.append(request.layout_role)
         return HttpResponse("")
@@ -64,10 +34,10 @@ def test_layout_decorator_sets_layout_role_main(rf, simple_layout):
     assert role_seen == ["main"]
 
 
-def test_layout_decorator_sets_is_layout_partial_false(rf, simple_layout):
+def test_layout_decorator_sets_is_layout_partial_false(rf, decorator_layout):
     partial_seen = []
 
-    @layout(simple_layout)
+    @layout(decorator_layout)
     def my_view(request):
         partial_seen.append(request.is_layout_partial)
         return HttpResponse("")
@@ -77,11 +47,11 @@ def test_layout_decorator_sets_is_layout_partial_false(rf, simple_layout):
     assert partial_seen == [False]
 
 
-def test_layout_decorator_noop_when_role_is_panel(rf, simple_layout):
+def test_layout_decorator_noop_when_role_is_panel(rf, decorator_layout):
     """@layout must be a no-op when the request is already in panel role."""
     call_count = [0]
 
-    @layout(simple_layout)
+    @layout(decorator_layout)
     def my_view(request):
         call_count[0] += 1
         return HttpResponse("panel-content")
@@ -93,9 +63,9 @@ def test_layout_decorator_noop_when_role_is_panel(rf, simple_layout):
     assert response.content == b"panel-content"
 
 
-def test_layout_decorator_accepts_dotted_string(rf, simple_layout):
-    # Register simple_layout under a known key
-    key = next(k for k, v in _registry.items() if v is simple_layout)
+def test_layout_decorator_accepts_dotted_string(rf, decorator_layout):
+    # Register decorator_layout under a known key
+    key = next(k for k, v in _registry.items() if v is decorator_layout)
 
     @layout(key)
     def my_view(request):
@@ -208,10 +178,10 @@ def test_layout_decorator_layout_context_set_before_view(rf, locmem_templates):
 # ── @layout — non-wrappable response pass-through ────────────────────────────
 
 
-def test_layout_decorator_passes_through_redirect(rf, simple_layout):
+def test_layout_decorator_passes_through_redirect(rf, decorator_layout):
     from django.http import HttpResponseRedirect
 
-    @layout(simple_layout)
+    @layout(decorator_layout)
     def my_view(request):
         return HttpResponseRedirect("/other/")
 
@@ -221,10 +191,10 @@ def test_layout_decorator_passes_through_redirect(rf, simple_layout):
     assert response["Location"] == "/other/"
 
 
-def test_layout_decorator_passes_through_404(rf, simple_layout):
+def test_layout_decorator_passes_through_404(rf, decorator_layout):
     from django.http import HttpResponseNotFound
 
-    @layout(simple_layout)
+    @layout(decorator_layout)
     def my_view(request):
         return HttpResponseNotFound()
 
@@ -233,10 +203,10 @@ def test_layout_decorator_passes_through_404(rf, simple_layout):
     assert response.status_code == 404
 
 
-def test_layout_decorator_passes_through_streaming_response(rf, simple_layout):
+def test_layout_decorator_passes_through_streaming_response(rf, decorator_layout):
     from django.http import StreamingHttpResponse
 
-    @layout(simple_layout)
+    @layout(decorator_layout)
     def my_view(request):
         return StreamingHttpResponse(iter([b"stream"]))
 

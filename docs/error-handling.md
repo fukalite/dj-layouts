@@ -4,7 +4,7 @@ When a panel raises an exception, dj-layouts catches it, logs it, and calls your
 
 ## Debug vs production mode
 
-Behaviour differs based on whether debug mode is active (controlled by `LAYOUTS_DEBUG_ERRORS` — see [Settings](settings.md)):
+Behaviour differs based on whether debug mode is active (controlled by `DEBUG_ERRORS` — see [Settings](settings.md)):
 
 | Mode | Behaviour |
 |---|---|

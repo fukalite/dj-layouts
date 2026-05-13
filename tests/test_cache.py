@@ -6,9 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from django.http import HttpResponse
-from django.test import RequestFactory
 
-from dj_layouts.base import Layout, _registry
+from dj_layouts.base import Layout
 from dj_layouts.cache import (
     custom,
     per_path,
@@ -20,30 +19,6 @@ from dj_layouts.cache import (
 from dj_layouts.panels import Panel
 from dj_layouts.queues import ScriptQueue, add_script
 from dj_layouts.rendering import async_render_with_layout, render_with_layout
-
-
-# ── Fixtures ──────────────────────────────────────────────────────────────────
-
-
-@pytest.fixture()
-def rf():
-    return RequestFactory()
-
-
-@pytest.fixture(autouse=True)
-def clear_registry():
-    snapshot = dict(_registry)
-    yield
-    _registry.clear()
-    _registry.update(snapshot)
-
-
-@pytest.fixture(autouse=True)
-def clear_cache():
-    from django.core.cache import caches
-
-    yield
-    caches["default"].clear()
 
 
 # ── CacheConfig.make_key ──────────────────────────────────────────────────────
@@ -143,33 +118,8 @@ def test_custom_backend_forwarded():
 # ── Integration: render_with_layout caching ───────────────────────────────────
 
 
-@pytest.fixture()
-def simple_layout(locmem_templates):
-    locmem_templates(
-        {
-            "layouts/cache_test.html": (
-                "{% load layouts %}{% panel 'nav' %}{% endpanel %}"
-                "|{% panel 'content' %}{% endpanel %}"
-            ),
-            "content.html": "",
-        }
-    )
-
-    call_count = {"nav": 0}
-
-    def nav_fn(request, **kwargs):
-        call_count["nav"] += 1
-        return HttpResponse(f"nav-{call_count['nav']}")
-
-    class CacheTestLayout(Layout):
-        template = "layouts/cache_test.html"
-        nav = Panel(nav_fn, cache=sitewide(timeout=60))
-
-    return CacheTestLayout, call_count
-
-
-def test_cached_panel_served_from_cache_on_second_request(simple_layout, rf):
-    layout_cls, call_count = simple_layout
+def test_cached_panel_served_from_cache_on_second_request(cache_test_layout, rf):
+    layout_cls, call_count = cache_test_layout
     request1 = rf.get("/")
     request2 = rf.get("/")
 
@@ -181,8 +131,8 @@ def test_cached_panel_served_from_cache_on_second_request(simple_layout, rf):
     assert call_count["nav"] == 1  # panel view only called once
 
 
-def test_panel_view_called_again_after_cache_miss(simple_layout, rf):
-    layout_cls, call_count = simple_layout
+def test_panel_view_called_again_after_cache_miss(cache_test_layout, rf):
+    layout_cls, call_count = cache_test_layout
     request = rf.get("/")
     render_with_layout(request, layout_cls, "content.html")
     assert call_count["nav"] == 1
@@ -190,9 +140,9 @@ def test_panel_view_called_again_after_cache_miss(simple_layout, rf):
     assert call_count["nav"] == 1  # still cached
 
 
-def test_cache_disabled_globally_always_rerenders(simple_layout, rf, settings):
-    settings.LAYOUTS_CACHE_ENABLED = False
-    layout_cls, call_count = simple_layout
+def test_cache_disabled_globally_always_rerenders(cache_test_layout, rf, settings):
+    settings.DJ_LAYOUTS = {"CACHE_ENABLED": False}
+    layout_cls, call_count = cache_test_layout
     render_with_layout(rf.get("/"), layout_cls, "content.html")
     render_with_layout(rf.get("/"), layout_cls, "content.html")
     assert call_count["nav"] == 2  # no caching
@@ -369,7 +319,7 @@ async def test_async_cached_panel_queue_items_replayed(locmem_templates, rf):
 
 @pytest.mark.asyncio
 async def test_async_cache_disabled_globally(locmem_templates, rf, settings):
-    settings.LAYOUTS_CACHE_ENABLED = False
+    settings.DJ_LAYOUTS = {"CACHE_ENABLED": False}
     locmem_templates(
         {
             "layouts/async_nodisable.html": (

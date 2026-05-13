@@ -6,7 +6,7 @@ import pytest
 from django.http import HttpResponse
 from django.test import RequestFactory
 
-from dj_layouts.base import Layout, _registry
+from dj_layouts.base import Layout
 from dj_layouts.queues import (
     BaseQueue,
     RenderQueue,
@@ -19,22 +19,6 @@ from dj_layouts.queues import (
     add_to_queue,
 )
 from dj_layouts.rendering import async_render_with_layout, render_with_layout
-
-
-# ── Fixtures ──────────────────────────────────────────────────────────────────
-
-
-@pytest.fixture()
-def rf():
-    return RequestFactory()
-
-
-@pytest.fixture(autouse=True)
-def clear_registry():
-    snapshot = dict(_registry)
-    yield
-    _registry.clear()
-    _registry.update(snapshot)
 
 
 # ── BaseQueue deduplication ───────────────────────────────────────────────────
@@ -257,26 +241,6 @@ def test_layout_queue_configs_are_inherited():
 
 
 # ── Integration: render_with_layout queue flow ────────────────────────────────
-
-
-@pytest.fixture()
-def simple_queue_layout(locmem_templates):
-    """Layout with scripts + styles and a renderscripts/renderstyles layout template."""
-    locmem_templates(
-        {
-            "layouts/sq.html": (
-                "{% load layouts %}{% renderscripts %}|{% renderstyles %}"
-            ),
-            "content_empty.html": "",
-        }
-    )
-
-    class SimpleQueueLayout(Layout):
-        template = "layouts/sq.html"
-        scripts = ScriptQueue()
-        styles = StyleQueue()
-
-    return SimpleQueueLayout
 
 
 def test_add_script_in_view_appears_in_output(
