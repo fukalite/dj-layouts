@@ -39,9 +39,6 @@ class WagtailLayoutMixin:
         if getattr(request, "is_preview", False):
             return super().serve(request, *args, **kwargs)  # type: ignore[misc]
 
-        if is_partial_request(request):
-            return super().serve(request, *args, **kwargs)  # type: ignore[misc]
-
         layout_class = self.layout_class
         if layout_class is None:
             from django.core.exceptions import ImproperlyConfigured
@@ -53,10 +50,25 @@ class WagtailLayoutMixin:
         if isinstance(layout_class, str):
             layout_class = Layout.resolve(layout_class)
 
-        return render_with_layout(
+        request._dj_layouts_target_class = layout_class
+
+        if is_partial_request(request):
+            response = super().serve(request, *args, **kwargs)  # type: ignore[misc]
+            from dj_layouts.decorators import _apply_htmx_smart_routing
+
+            return _apply_htmx_smart_routing(
+                request, response, is_partial=True, resolved_cls=layout_class
+            )
+
+        response = render_with_layout(
             request,
             layout_class,
             self.get_template(request, *args, **kwargs),  # type: ignore[attr-defined]
             context=self.get_context(request, *args, **kwargs),  # type: ignore[attr-defined]
             panels=self.layout_panels,
+        )
+        from dj_layouts.decorators import _apply_htmx_smart_routing
+
+        return _apply_htmx_smart_routing(
+            request, response, is_partial=False, resolved_cls=layout_class
         )
