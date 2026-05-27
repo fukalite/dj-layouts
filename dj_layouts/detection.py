@@ -20,8 +20,35 @@ def never_detector(request: Any) -> bool:
 
 
 def htmx_detector(request: Any) -> bool:
-    """Returns True if the request carries the HX-Request: true header (HTMX)."""
-    return request.headers.get("HX-Request") == "true"
+    """
+    Returns True if the request carries the HX-Request: true header (HTMX).
+
+    If HTMX_SMART_ROUTING is enabled, we only treat this as a partial request
+    if the current layout matches the target layout. Otherwise, we force a
+    full layout load.
+    """
+    if request.headers.get("HX-Request") != "true":
+        return False
+
+    if not getattr(dj_layouts_settings, "HTMX_SMART_ROUTING", False):
+        return True
+
+    if getattr(request, "dj_layouts_force_full", False):
+        return False
+
+    target_layout = getattr(request, "_dj_layouts_target_class", None)
+    if not target_layout:
+        return True
+
+    cookie_name = dj_layouts_settings.HTMX_COOKIE_NAME
+    current_layout_name = request.COOKIES.get(cookie_name)
+
+    # If layouts match, it's a safe partial request.
+    if current_layout_name == target_layout.__name__:
+        return True
+
+    # Mismatch! Force full assembly.
+    return False
 
 
 def query_param_detector(request: Any) -> bool:

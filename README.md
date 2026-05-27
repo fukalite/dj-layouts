@@ -35,6 +35,23 @@ def homepage(request):
     return render(request, "home/index.html", {"items": get_items()})
 ```
 
+## HTMX Smart Routing (SPA)
+
+With HTMX Smart Routing, you can turn your standard multi-page Django application into a smooth single-page application (SPA) with zero client-side routing logic.
+
+Opt-in by enabling the setting in your `settings.py`:
+
+```python
+DJ_LAYOUTS = {
+    "PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"],
+    "HTMX_SMART_ROUTING": True,
+}
+```
+
+Add `hx-boost="true"` to your `<body>`. When a user navigates between views:
+- If the next view uses the **same layout**, `dj-layouts` returns only the partial view response and tells HTMX to retarget and swap just the `#panel-content` panel (extremely fast).
+- If the next view uses a **different layout**, `dj-layouts` dynamically assembles the new full layout, updates the layout tracker cookie, and tells HTMX to smoothly swap the entire `<body>`.
+
 ## Supported versions
 
 | Python | Django    |

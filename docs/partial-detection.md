@@ -42,6 +42,36 @@ DJ_LAYOUTS = {"PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"]}
 
 With this configured, HTMX fetch requests receive only the partial HTML — perfect for fragment updates. Full page navigations (which lack the header) receive the complete layout.
 
+---
+
+## Out-Of-The-Box SPA Routing (Smart Routing)
+
+By simply setting `HTMX_SMART_ROUTING = True` and adding `hx-boost="true"` to your `<body>`, `dj-layouts` magically transforms standard Django applications into buttery-smooth Single Page Applications (SPAs).
+
+It intelligently manages layout transitions, returning partials when layouts match (fast) and swapping the `<body>` when traversing layouts, maintaining full SEO compatibility and zero JavaScript routing overhead.
+
+### How it works under the hood
+1. **Layout Tracker Cookie:** When a full layout is first loaded, `dj-layouts` sets a tracking cookie (`dj_layout_current`) identifying which layout class rendered the page.
+2. **Dynamic Retargeting:** On subsequent boosted links/requests:
+   - If the next view uses the **same layout**, `dj-layouts` returns only the partial view response and adds the `HX-Retarget` header specifying your main content panel selector (default: `#panel-content`). HTMX swaps only the content panel without page flashes.
+   - If the next view uses a **different layout**, `dj-layouts` assembles the entire layout, sets `HX-Retarget: body` and `HX-Reswap: outerHTML` to tell HTMX to cleanly replace the whole body, and updates the tracking cookie.
+
+### Caveats & Watchouts (CRITICAL)
+
+#### 1. Error Handling (500 / 404)
+You **MUST** route your Django error handlers (`handler404`, `handler500`) to custom views that are decorated with `@layout`. If you do not, and an HTMX request triggers an error, Django will return an un-decorated full HTML error page. HTMX will inject this raw HTML into your `#panel-content` target, breaking the UI. When decorated, `dj-layouts` safely renders the error page *inside* the current layout's main panel.
+
+#### 2. Cross-Subdomain AJAX
+HTMX `hx-boost` strictly ignores cross-origin links (including subdomains). If your application spans multiple subdomains (e.g., `news.app.com` and `circles.app.com`), you must:
+- Set `HTMX_COOKIE_DOMAIN = ".app.com"` so the layout cookie is shared across subdomains.
+- Use a custom JS snippet to manually trigger `htmx.ajax` on cross-subdomain links, bypassing the strict origin check.
+
+#### 3. The Escape Hatch
+If a view logic updates data that affects a parent panel (e.g., updating a username that appears in the sidebar), the view can set `request.dj_layouts_force_full = True`. This forces `dj-layouts` to skip partial rendering and return the full layout, allowing HTMX to gracefully refresh the entire page state seamlessly.
+
+#### 4. Independent Subpanels
+Forms or buttons that should *only* update a specific subpanel must explicitly define their target (e.g., `hx-target="#panel-sidebar"`). This overrides the smart router's default content targeting.
+
 ### `dj_layouts.detection.query_param_detector`
 
 Returns `True` when `?_partial=1` is in the query string. Useful for testing or JavaScript fetch calls where you control the URL.
@@ -171,5 +201,9 @@ If a `LayoutMixin` CBV is called as a panel (i.e. `request.layout_role == "panel
 |---|---|---|
 | `DJ_LAYOUTS["PARTIAL_DETECTORS"]` | `[]` | List of dotted detector paths |
 | `DJ_LAYOUTS["DETECTOR_RAISE_EXCEPTIONS"]` | `False` | Re-raise detector exceptions instead of logging |
+| `DJ_LAYOUTS["HTMX_SMART_ROUTING"]` | `False` | Enable intelligent SPA transitions and cookie layout tracking |
+| `DJ_LAYOUTS["HTMX_CONTENT_TARGET"]` | `"#panel-content"` | CSS selector target for same-layout partial rendering |
+| `DJ_LAYOUTS["HTMX_COOKIE_NAME"]` | `"dj_layout_current"` | Cookie name used to track the current layout |
+| `DJ_LAYOUTS["HTMX_COOKIE_DOMAIN"]` | `None` | Domain scope for the layout tracking cookie |
 
 See [Settings](settings.md) for the full settings reference.
