@@ -11,6 +11,10 @@ DEFAULTS: dict = {
     "CACHE_BACKEND": "default",
     "PARTIAL_DETECTORS": [],
     "DETECTOR_RAISE_EXCEPTIONS": False,
+    "HTMX_SMART_ROUTING": False,  # Opt-in to the new SPA behavior
+    "HTMX_CONTENT_TARGET": "#panel-content",  # The CSS selector for the main content panel
+    "HTMX_COOKIE_NAME": "dj_layout_current",
+    "HTMX_COOKIE_DOMAIN": None,  # Set to e.g., ".domain.com" for cross-subdomain support
 }
 
 

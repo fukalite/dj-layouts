@@ -10,6 +10,10 @@ DJ_LAYOUTS = {
     "CACHE_BACKEND": "default",
     "PARTIAL_DETECTORS": [],
     "DETECTOR_RAISE_EXCEPTIONS": False,
+    "HTMX_SMART_ROUTING": False,
+    "HTMX_CONTENT_TARGET": "#panel-content",
+    "HTMX_COOKIE_NAME": "dj_layout_current",
+    "HTMX_COOKIE_DOMAIN": None,
 }
 ```
 
@@ -164,5 +168,65 @@ When `True`, detector exceptions propagate as-is. Useful in development to catch
 # settings/local.py
 DJ_LAYOUTS = {
     "DETECTOR_RAISE_EXCEPTIONS": True,
+}
+```
+
+---
+
+## `HTMX_SMART_ROUTING`
+
+**Type:** `bool`
+**Default:** `False`
+
+Enables Out-of-the-Box Single Page Application (SPA) routing transitions using HTMX. When enabled, `dj-layouts` uses a cookie to track the user's current layout, dynamically deciding when to return lightweight partials (when navigating within the same layout) and when to return a fully assembled layout (when transitioning between different layouts).
+
+```python
+DJ_LAYOUTS = {
+    "HTMX_SMART_ROUTING": True,
+}
+```
+
+---
+
+## `HTMX_CONTENT_TARGET`
+
+**Type:** `str`
+**Default:** `"#panel-content"`
+
+The CSS selector of the main content container where the partial view's content should be injected when navigating within the same layout.
+
+```python
+DJ_LAYOUTS = {
+    "HTMX_CONTENT_TARGET": "#main-container",
+}
+```
+
+---
+
+## `HTMX_COOKIE_NAME`
+
+**Type:** `str`
+**Default:** `"dj_layout_current"`
+
+The name of the cookie used to track which Layout class is currently loaded in the user's browser.
+
+```python
+DJ_LAYOUTS = {
+    "HTMX_COOKIE_NAME": "my_layout_tracker",
+}
+```
+
+---
+
+## `HTMX_COOKIE_DOMAIN`
+
+**Type:** `str | None`
+**Default:** `None`
+
+The domain to set on the layout tracking cookie. Set to e.g., `".domain.com"` if your application operates across multiple subdomains and you need them to share the layout status to prevent full page reloads.
+
+```python
+DJ_LAYOUTS = {
+    "HTMX_COOKIE_DOMAIN": ".app.com",
 }
 ```

@@ -23,6 +23,42 @@ _PANEL_ONLY_MARKER = "_is_panel_only"
 _deferred_layout_refs: list[tuple[str, str]] = []
 
 
+def _apply_htmx_smart_routing(
+    request: Any,
+    response: Any,
+    is_partial: bool,
+    resolved_cls: type[Layout],
+) -> Any:
+    """Apply HTMX smart routing headers and layout tracking cookies to response."""
+    from dj_layouts.settings import dj_layouts_settings
+
+    if response is None or not hasattr(response, "set_cookie"):
+        return response
+
+    is_htmx = request.headers.get("HX-Request") == "true"
+    smart_routing = getattr(dj_layouts_settings, "HTMX_SMART_ROUTING", False)
+
+    if is_htmx and smart_routing:
+        if is_partial:
+            # Same layout: Tell HTMX to specifically target the content panel
+            response["HX-Retarget"] = dj_layouts_settings.HTMX_CONTENT_TARGET
+        else:
+            # Different layout: Tell HTMX to swap the entire body
+            response["HX-Retarget"] = "body"
+            response["HX-Reswap"] = "outerHTML"
+
+    # Always set the cookie if a full layout was assembled (HTMX or not)
+    if not is_partial and smart_routing:
+        response.set_cookie(
+            dj_layouts_settings.HTMX_COOKIE_NAME,
+            resolved_cls.__name__,
+            domain=dj_layouts_settings.HTMX_COOKIE_DOMAIN,
+            path="/",
+        )
+
+    return response
+
+
 def layout(
     layout_class: type[Layout] | str,
     *,
@@ -73,10 +109,15 @@ def layout(
             # Attach queues before the view runs so it can call add_script / add_style
             attach_queues(request, resolved_cls)
 
+            request._dj_layouts_target_class = resolved_cls
+
             # Partial detection: if any detector fires, skip layout assembly.
             if is_partial_request(request):
                 mark_request_as_partial(request, partial=True)
-                return view_func(request, *args, **kwargs)
+                response = view_func(request, *args, **kwargs)
+                return _apply_htmx_smart_routing(
+                    request, response, is_partial=True, resolved_cls=resolved_cls
+                )
 
             mark_request_as_partial(request, partial=False)
             response = view_func(request, *args, **kwargs)
@@ -97,14 +138,18 @@ def layout(
                 getattr(response, "charset", "utf-8") or "utf-8"
             )
 
-            return _assemble_layout(
+            assembled_response = _assemble_layout(
                 request,
                 resolved_cls,
                 content_html,
                 panels=panels,
                 _layout_ctx=layout_ctx,
             )
+            return _apply_htmx_smart_routing(
+                request, assembled_response, is_partial=False, resolved_cls=resolved_cls
+            )
 
+        setattr(wrapper, "layout_class", layout_class)
         return wrapper
 
     return decorator
@@ -182,10 +227,15 @@ def async_layout(
             # Attach queues before the view runs so it can call add_script / add_style
             attach_queues(request, resolved_cls)
 
+            request._dj_layouts_target_class = resolved_cls
+
             # Partial detection: if any detector fires, skip layout assembly.
             if is_partial_request(request):
                 mark_request_as_partial(request, partial=True)
-                return await view_func(request, *args, **kwargs)
+                response = await view_func(request, *args, **kwargs)
+                return _apply_htmx_smart_routing(
+                    request, response, is_partial=True, resolved_cls=resolved_cls
+                )
 
             mark_request_as_partial(request, partial=False)
             response = await view_func(request, *args, **kwargs)
@@ -202,14 +252,18 @@ def async_layout(
             content_html = response.content.decode(
                 getattr(response, "charset", "utf-8") or "utf-8"
             )
-            return await _async_assemble_layout(
+            assembled_response = await _async_assemble_layout(
                 request,
                 resolved_cls,
                 content_html,
                 panels=panels,
                 _layout_ctx=layout_ctx,
             )
+            return _apply_htmx_smart_routing(
+                request, assembled_response, is_partial=False, resolved_cls=resolved_cls
+            )
 
+        setattr(wrapper, "layout_class", layout_class)
         return wrapper
 
     return decorator
