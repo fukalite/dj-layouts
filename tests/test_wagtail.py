@@ -161,3 +161,78 @@ def test_wagtail_module_requires_wagtail_installed():
         with pytest.raises(ImportError, match="wagtail"):
             importlib.import_module("dj_layouts.wagtail")
     sys.modules.pop("dj_layouts.wagtail", None)
+
+
+# ── HTMX Smart Routing ────────────────────────────────────────────────────────
+
+
+def test_wagtail_smart_routing_same_layout(
+    rf, wagtail_mixin, locmem_templates, settings
+):
+    settings.DJ_LAYOUTS = {
+        "HTMX_SMART_ROUTING": True,
+        "HTMX_CONTENT_TARGET": "#panel-content",
+        "HTMX_COOKIE_NAME": "dj_layout_current",
+        "PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"],
+    }
+    WagtailLayoutMixin, FakePage = wagtail_mixin
+    locmem_templates(
+        {
+            "layouts/base.html": "{% load layouts %}LAYOUT:{% panel 'content' %}{% endpanel %}",
+            "page.html": "PAGE-CONTENT",
+        }
+    )
+
+    class TestLayout(Layout):
+        template = "layouts/base.html"
+
+    class BlogPage(WagtailLayoutMixin, FakePage):
+        template = "page.html"
+        layout_class = TestLayout
+
+    request = rf.get("/", HTTP_HX_REQUEST="true")
+    request.COOKIES["dj_layout_current"] = "TestLayout"
+
+    response = BlogPage().serve(request)
+    assert response.content == b"FAKE-PAGE"
+    assert response.headers.get("HX-Retarget") == "#panel-content"
+    assert "HX-Reswap" not in response.headers
+    assert "set-cookie" not in response.headers.get("Set-Cookie", "").lower()
+
+
+def test_wagtail_smart_routing_different_layout(
+    rf, wagtail_mixin, locmem_templates, settings
+):
+    settings.DJ_LAYOUTS = {
+        "HTMX_SMART_ROUTING": True,
+        "HTMX_CONTENT_TARGET": "#panel-content",
+        "HTMX_COOKIE_NAME": "dj_layout_current",
+        "PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"],
+    }
+    WagtailLayoutMixin, FakePage = wagtail_mixin
+    locmem_templates(
+        {
+            "layouts/base.html": "{% load layouts %}LAYOUT:{% panel 'content' %}{% endpanel %}",
+            "page.html": "PAGE-CONTENT",
+        }
+    )
+
+    class TestLayout(Layout):
+        template = "layouts/base.html"
+
+    class BlogPage(WagtailLayoutMixin, FakePage):
+        template = "page.html"
+        layout_class = TestLayout
+
+    request = rf.get("/", HTTP_HX_REQUEST="true")
+    request.COOKIES["dj_layout_current"] = "OtherLayout"
+
+    response = BlogPage().serve(request)
+    assert b"LAYOUT:" in response.content
+    assert b"PAGE-CONTENT" in response.content
+    assert response.headers.get("HX-Retarget") == "body"
+    assert response.headers.get("HX-Reswap") == "outerHTML"
+
+    cookie = response.cookies.get("dj_layout_current")
+    assert cookie is not None
+    assert cookie.value == "TestLayout"
