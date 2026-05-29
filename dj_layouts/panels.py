@@ -64,6 +64,63 @@ class Panel:
         self.cache = cache
         self.join = join
 
+    def should_render(self, request: Any) -> bool:
+        """Return True if this panel should be rendered."""
+        return True
+
+
+class ConditionalPanel(Panel):
+    """
+    Panel descriptor that conditionally renders its content based on an
+    evaluation of the current context/request.layout_context.
+    """
+
+    def __init__(
+        self,
+        source: Any = _SENTINEL,
+        *,
+        condition: Any,
+        url_name: str | None = None,
+        literal: str | None = None,
+        template_name: str | None = None,
+        context: dict[str, Any] | None = None,
+        cache: Any = None,
+        join: str = "",
+    ) -> None:
+        if template_name is not None:
+            if source is not _SENTINEL:
+                raise TypeError(
+                    "ConditionalPanel accepts either source or template_name, not both."
+                )
+            source = template_name
+
+        super().__init__(
+            source=source,
+            url_name=url_name,
+            literal=literal,
+            context=context,
+            cache=cache,
+            join=join,
+        )
+        self.condition = condition
+
+    def should_render(self, request: Any) -> bool:
+        ctx = getattr(request, "layout_context", {})
+
+        if callable(self.condition):
+            try:
+                return bool(self.condition(ctx))
+            except Exception:
+                return False
+        elif isinstance(self.condition, str):
+            from django.template import Variable, VariableDoesNotExist
+            try:
+                val = Variable(self.condition).resolve(ctx)
+                return bool(val)
+            except (VariableDoesNotExist, KeyError, AttributeError):
+                return False
+        return bool(self.condition)
+
 
 def resolve_panel_source(
     request: Any,

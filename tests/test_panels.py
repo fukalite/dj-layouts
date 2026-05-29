@@ -259,3 +259,68 @@ def test_panel_default_join_is_empty_string():
 def test_panel_cache_stored():
     p = Panel(None, cache="some-cache-config")
     assert p.cache == "some-cache-config"
+
+
+# ── ConditionalPanel tests ───────────────────────────────────────────────────
+
+
+from dj_layouts.panels import ConditionalPanel
+
+
+def test_conditional_panel_stores_condition():
+    p = ConditionalPanel(literal="text", condition=True)
+    assert p.condition is True
+
+
+def test_conditional_panel_template_name_alias():
+    p = ConditionalPanel(template_name="news.html", condition=True)
+    assert p.source == "news.html"
+    assert p._source_kind == "auto"
+
+
+def test_conditional_panel_mutual_exclusion_raises():
+    import pytest
+    with pytest.raises(TypeError, match="accepts either source or template_name"):
+        ConditionalPanel("news.html", template_name="other.html", condition=True)
+
+
+def test_conditional_panel_should_render_bool(rf):
+    req = rf.get("/")
+    req.layout_context = LayoutContext({})
+
+    p_true = ConditionalPanel(literal="test", condition=True)
+    assert p_true.should_render(req) is True
+
+    p_false = ConditionalPanel(literal="test", condition=False)
+    assert p_false.should_render(req) is False
+
+
+def test_conditional_panel_should_render_callable(rf):
+    req = rf.get("/")
+    req.layout_context = LayoutContext({"show_me": True})
+
+    p = ConditionalPanel(literal="test", condition=lambda ctx: ctx.get("show_me"))
+    assert p.should_render(req) is True
+
+    req.layout_context = LayoutContext({"show_me": False})
+    assert p.should_render(req) is False
+
+    # Callable raises exception -> returns False
+    p_err = ConditionalPanel(literal="test", condition=lambda ctx: ctx["missing"])
+    assert p_err.should_render(req) is False
+
+
+def test_conditional_panel_should_render_string_var(rf):
+    req = rf.get("/")
+    req.layout_context = LayoutContext({"show_me": True, "obj": {"active": False}})
+
+    p = ConditionalPanel(literal="test", condition="show_me")
+    assert p.should_render(req) is True
+
+    p_nested = ConditionalPanel(literal="test", condition="obj.active")
+    assert p_nested.should_render(req) is False
+
+    # Missing variable -> returns False
+    p_missing = ConditionalPanel(literal="test", condition="nonexistent")
+    assert p_missing.should_render(req) is False
+
