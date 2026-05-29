@@ -53,18 +53,29 @@ class WagtailLayoutMixin:
         request._dj_layouts_target_class = layout_class
 
         if is_partial_request(request):
+            request.is_wagtail_partial = True
             response = super().serve(request, *args, **kwargs)  # type: ignore[misc]
+
+            if hasattr(response, "context_data") and isinstance(
+                response.context_data, dict
+            ):
+                response.context_data.setdefault("base_template", "layouts/blank.html")
+
             from dj_layouts.decorators import _apply_htmx_smart_routing
 
             return _apply_htmx_smart_routing(
                 request, response, is_partial=True, resolved_cls=layout_class
             )
 
+        context = self.get_context(request, *args, **kwargs)  # type: ignore[attr-defined]
+        if isinstance(context, dict):
+            context.setdefault("base_template", "layouts/blank.html")
+
         response = render_with_layout(
             request,
             layout_class,
             self.get_template(request, *args, **kwargs),  # type: ignore[attr-defined]
-            context=self.get_context(request, *args, **kwargs),  # type: ignore[attr-defined]
+            context=context,
             panels=self.layout_panels,
         )
         from dj_layouts.decorators import _apply_htmx_smart_routing
