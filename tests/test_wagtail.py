@@ -236,3 +236,56 @@ def test_wagtail_smart_routing_different_layout(
     cookie = response.cookies.get("dj_layout_current")
     assert cookie is not None
     assert cookie.value == "TestLayout"
+
+
+def test_wagtail_dynamic_template_context(
+    rf, wagtail_mixin, locmem_templates, settings
+):
+    settings.DJ_LAYOUTS = {
+        "HTMX_SMART_ROUTING": True,
+        "HTMX_CONTENT_TARGET": "#panel-content",
+        "HTMX_COOKIE_NAME": "dj_layout_current",
+        "PARTIAL_DETECTORS": ["dj_layouts.detection.htmx_detector"],
+    }
+    WagtailLayoutMixin, FakePage = wagtail_mixin
+    locmem_templates(
+        {
+            "layouts/base.html": "{% load layouts %}LAYOUT:{% panel 'content' %}{% endpanel %}",
+            "layouts/blank.html": "{% block content %}{% endblock %}",
+            "page.html": "{% extends base_template|default:'base.html' %}{% block content %}PAGE-CONTENT{% endblock %}",
+        }
+    )
+
+    class TestLayout(Layout):
+        template = "layouts/base.html"
+
+    class CustomFakePage(FakePage):
+        def serve(self, request, *args, **kwargs):
+            from django.template.response import TemplateResponse
+
+            return TemplateResponse(
+                request, self.template, self.get_context(request, *args, **kwargs)
+            )
+
+    class BlogPage(WagtailLayoutMixin, CustomFakePage):
+        template = "page.html"
+        layout_class = TestLayout
+
+    # Case A: Partial Request (should inject base_template = layouts/blank.html in context_data)
+    request_partial = rf.get("/", HTTP_HX_REQUEST="true")
+    request_partial.COOKIES["dj_layout_current"] = "TestLayout"
+
+    response_partial = BlogPage().serve(request_partial)
+    assert response_partial.context_data.get("base_template") == "layouts/blank.html"
+
+    # When rendered, it should only render the block since it inherits from blank.html
+    response_partial.render()
+    assert response_partial.content == b"PAGE-CONTENT"
+
+    # Case B: Full Request (should also set base_template = layouts/blank.html in context)
+    request_full = rf.get("/")
+    response_full = BlogPage().serve(request_full)
+
+    # The full page rendering wraps the page in the layout, so it should contain "LAYOUT:" and "PAGE-CONTENT"
+    assert b"LAYOUT:" in response_full.content
+    assert b"PAGE-CONTENT" in response_full.content
