@@ -2,7 +2,7 @@ import pytest
 from django.http import HttpResponse
 
 from dj_layouts.base import Layout
-from dj_layouts.panels import Panel
+from dj_layouts.panels import ConditionalPanel, Panel
 from dj_layouts.rendering import render_with_layout
 
 
@@ -374,3 +374,99 @@ def test_layouts_debug_errors_true_overrides_production(rf, locmem_templates, se
     request = rf.get("/")
     with pytest.raises(PanelRenderError):
         render_with_layout(request, TLayout, "partial.html")
+
+
+# ── ConditionalPanel Integration Tests ────────────────────────────────────────
+
+
+def test_rendering_with_conditional_panel_renders_when_true(rf, locmem_templates):
+    locmem_templates(
+        {
+            "layouts/t.html": "{% load layouts %}{% panel 'cond' %}{% endpanel %}{% panel 'content' %}{% endpanel %}",
+            "partial.html": "body",
+        }
+    )
+
+    class TLayout(Layout):
+        template = "layouts/t.html"
+        cond = ConditionalPanel("hello-panel", condition=lambda ctx: ctx.get("show_it"))
+
+        def get_layout_context(self, request):
+            return {"show_it": True}
+
+    request = rf.get("/")
+    response = render_with_layout(request, TLayout, "partial.html")
+    assert b"hello-panel" in response.content
+
+
+def test_rendering_with_conditional_panel_skipped_when_false(rf, locmem_templates):
+    locmem_templates(
+        {
+            "layouts/t.html": "{% load layouts %}{% panel 'cond' %}fallback{% endpanel %}{% panel 'content' %}{% endpanel %}",
+            "partial.html": "body",
+        }
+    )
+
+    class TLayout(Layout):
+        template = "layouts/t.html"
+        cond = ConditionalPanel("hello-panel", condition=lambda ctx: ctx.get("show_it"))
+
+        def get_layout_context(self, request):
+            return {"show_it": False}
+
+    request = rf.get("/")
+    response = render_with_layout(request, TLayout, "partial.html")
+    # Should not have "hello-panel" and should fall back to the block contents ("fallback")
+    assert b"hello-panel" not in response.content
+    assert b"fallback" in response.content
+
+
+@pytest.mark.asyncio
+async def test_async_rendering_with_conditional_panel_renders_when_true(
+    rf, locmem_templates
+):
+    from dj_layouts.rendering import async_render_with_layout
+
+    locmem_templates(
+        {
+            "layouts/t.html": "{% load layouts %}{% panel 'cond' %}{% endpanel %}{% panel 'content' %}{% endpanel %}",
+            "partial.html": "body",
+        }
+    )
+
+    class TLayout(Layout):
+        template = "layouts/t.html"
+        cond = ConditionalPanel("hello-panel", condition="show_it")
+
+        def get_layout_context(self, request):
+            return {"show_it": True}
+
+    request = rf.get("/")
+    response = await async_render_with_layout(request, TLayout, "partial.html")
+    assert b"hello-panel" in response.content
+
+
+@pytest.mark.asyncio
+async def test_async_rendering_with_conditional_panel_skipped_when_false(
+    rf, locmem_templates
+):
+    from dj_layouts.rendering import async_render_with_layout
+
+    locmem_templates(
+        {
+            "layouts/t.html": "{% load layouts %}{% panel 'cond' %}fallback{% endpanel %}{% panel 'content' %}{% endpanel %}",
+            "partial.html": "body",
+        }
+    )
+
+    class TLayout(Layout):
+        template = "layouts/t.html"
+        cond = ConditionalPanel("hello-panel", condition="show_it")
+
+        def get_layout_context(self, request):
+            return {"show_it": False}
+
+    request = rf.get("/")
+    response = await async_render_with_layout(request, TLayout, "partial.html")
+    assert b"hello-panel" not in response.content
+    assert b"fallback" in response.content

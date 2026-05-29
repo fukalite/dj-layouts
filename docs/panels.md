@@ -156,6 +156,54 @@ Force URL name resolution. See [URL name (non-namespaced)](#url-name-non-namespa
 
 Force literal string treatment. See [Literal HTML — literal= kwarg](#literal-html-literal-kwarg) above.
 
+## ConditionalPanel
+
+`ConditionalPanel` is a subclass of `Panel` that conditionally renders its contents based on the evaluation of a condition against the active layout context.
+
+```python
+from dj_layouts import Layout, ConditionalPanel
+
+class NewsLayout(Layout):
+    template = "layouts/news.html"
+    
+    # Only renders if 'object.allow_replies' evaluates to True in the layout context
+    replies_panel = ConditionalPanel(
+        template_name="engagement/thread_panel.html", 
+        condition=lambda context: getattr(context.get('object'), 'allow_replies', False)
+    )
+```
+
+If the condition evaluates to `False`, the layout rendering engine completely bypasses the panel, returning an empty string `""` without attempting to resolve the source or triggering cache lookups/writes. This triggers the template fallback inside the layout.
+
+### Specifying the condition
+
+The `condition` parameter can be one of:
+
+1. **A Callable or Lambda:** A function that receives `context` (the active `LayoutContext` object) as its sole argument and returns a boolean value.
+   ```python
+   # Evaluates if 'user.is_staff' is True in context
+   ConditionalPanel("admin_tools.html", condition=lambda ctx: ctx.get("user").is_staff)
+   ```
+
+2. **A String (Context Variable):** A string representing a variable in the layout context to evaluate. It supports dotted notation for nested lookups (resolved via Django's template variable resolver).
+   ```python
+   # Evaluates 'allow_replies' in context
+   ConditionalPanel("engagement.html", condition="allow_replies")
+
+   # Evaluates 'object.allow_replies' in context (nested lookup)
+   ConditionalPanel("engagement.html", condition="object.allow_replies")
+   ```
+
+3. **A Boolean or any Truthy/Falsy value:** A raw value resolved at configuration time.
+   ```python
+   ConditionalPanel("feature.html", condition=settings.FEATURE_FLAG)
+   ```
+
+### Specification details
+
+- `ConditionalPanel` accepts `template_name` as a keyword argument alias to `source` for readability. You cannot specify both `source` and `template_name`.
+- Any exception raised during condition callable evaluation or variable lookup is caught gracefully and treated as `False` (bypassing rendering).
+
 ## Panel priority order
 
 When a request is processed, the effective panel for each name is determined in this order (last wins):

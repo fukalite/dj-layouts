@@ -82,6 +82,10 @@ def _assemble_layout(
             rendered_panels[panel_name] = ""
             continue
 
+        if not panel.should_render(request):
+            rendered_panels[panel_name] = ""
+            continue
+
         # ── Cache check ───────────────────────────────────────────────────────
         cache_cfg = panel.cache
         cache_key: str | None = None
@@ -288,7 +292,7 @@ async def _async_assemble_layout(
     non_none: list[tuple[str, Panel]] = [
         (name, cast(Panel, panel))
         for name, panel in effective_panels.items()
-        if panel is not None
+        if panel is not None and panel.should_render(request)
     ]
 
     cache_hits: dict[str, tuple[str, dict]] = {}  # panel_name -> (html, queue_snapshot)
@@ -329,7 +333,7 @@ async def _async_assemble_layout(
     # ── Assemble in definition order ──────────────────────────────────────────
     rendered_panels: dict[str, str] = {"content": content_html}
     for panel_name, panel_or_none in effective_panels.items():
-        if panel_or_none is None:
+        if panel_or_none is None or not panel_or_none.should_render(request):
             rendered_panels[panel_name] = ""
 
     render_idx = 0
