@@ -114,6 +114,7 @@ class ConditionalPanel(Panel):
                 return False
         elif isinstance(self.condition, str):
             from django.template import Variable, VariableDoesNotExist
+
             try:
                 val = Variable(self.condition).resolve(ctx)
                 return bool(val)

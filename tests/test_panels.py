@@ -2,7 +2,7 @@ import pytest
 from django.http import HttpResponse
 
 from dj_layouts.context import LayoutContext
-from dj_layouts.panels import Panel, resolve_panel_source
+from dj_layouts.panels import ConditionalPanel, Panel, resolve_panel_source
 
 
 # ── None source ───────────────────────────────────────────────────────────────
@@ -264,9 +264,6 @@ def test_panel_cache_stored():
 # ── ConditionalPanel tests ───────────────────────────────────────────────────
 
 
-from dj_layouts.panels import ConditionalPanel
-
-
 def test_conditional_panel_stores_condition():
     p = ConditionalPanel(literal="text", condition=True)
     assert p.condition is True
@@ -280,6 +277,7 @@ def test_conditional_panel_template_name_alias():
 
 def test_conditional_panel_mutual_exclusion_raises():
     import pytest
+
     with pytest.raises(TypeError, match="accepts either source or template_name"):
         ConditionalPanel("news.html", template_name="other.html", condition=True)
 
@@ -323,4 +321,3 @@ def test_conditional_panel_should_render_string_var(rf):
     # Missing variable -> returns False
     p_missing = ConditionalPanel(literal="test", condition="nonexistent")
     assert p_missing.should_render(req) is False
-

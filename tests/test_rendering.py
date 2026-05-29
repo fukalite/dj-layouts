@@ -2,7 +2,7 @@ import pytest
 from django.http import HttpResponse
 
 from dj_layouts.base import Layout
-from dj_layouts.panels import Panel
+from dj_layouts.panels import ConditionalPanel, Panel
 from dj_layouts.rendering import render_with_layout
 
 
@@ -379,9 +379,6 @@ def test_layouts_debug_errors_true_overrides_production(rf, locmem_templates, se
 # ── ConditionalPanel Integration Tests ────────────────────────────────────────
 
 
-from dj_layouts.panels import ConditionalPanel
-
-
 def test_rendering_with_conditional_panel_renders_when_true(rf, locmem_templates):
     locmem_templates(
         {
@@ -425,7 +422,9 @@ def test_rendering_with_conditional_panel_skipped_when_false(rf, locmem_template
 
 
 @pytest.mark.asyncio
-async def test_async_rendering_with_conditional_panel_renders_when_true(rf, locmem_templates):
+async def test_async_rendering_with_conditional_panel_renders_when_true(
+    rf, locmem_templates
+):
     from dj_layouts.rendering import async_render_with_layout
 
     locmem_templates(
@@ -448,7 +447,9 @@ async def test_async_rendering_with_conditional_panel_renders_when_true(rf, locm
 
 
 @pytest.mark.asyncio
-async def test_async_rendering_with_conditional_panel_skipped_when_false(rf, locmem_templates):
+async def test_async_rendering_with_conditional_panel_skipped_when_false(
+    rf, locmem_templates
+):
     from dj_layouts.rendering import async_render_with_layout
 
     locmem_templates(
@@ -469,4 +470,3 @@ async def test_async_rendering_with_conditional_panel_skipped_when_false(rf, loc
     response = await async_render_with_layout(request, TLayout, "partial.html")
     assert b"hello-panel" not in response.content
     assert b"fallback" in response.content
-
