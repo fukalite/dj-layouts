@@ -167,7 +167,8 @@ def _render_layout_template(
     layout_template = layout_instance.get_template(request)
     full_html = render_to_string(
         layout_template,
-        {"_panels": rendered_panels, **layout_ctx, "request": request},
+        {"_panels": rendered_panels, **layout_ctx},
+        request=request,
     )
     return HttpResponse(full_html)
 
